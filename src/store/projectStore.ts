@@ -33,6 +33,7 @@ interface ProjectStoreState {
   hasApiKey: boolean
   isBusy: boolean
   error: string | null
+  latestOptions: string[] | null
   initialize: () => Promise<void>
   createProjectDraft: (name: string, description: string) => void
   loadProjectFromPath: (path: string) => Promise<void>
@@ -162,6 +163,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   hasApiKey: false,
   isBusy: false,
   error: null,
+  latestOptions: null,
 
   initialize: async () => {
     set({ isBusy: true, error: null })
@@ -305,6 +307,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     set({
       isBusy: true,
       error: null,
+      latestOptions: null,
       currentProject: {
         ...project,
         updatedAt: nowIso(),
@@ -328,6 +331,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       set({
         isBusy: false,
+        latestOptions: turn.options ?? null,
         currentProject: {
           ...current,
           updatedAt: nowIso(),
@@ -350,7 +354,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       return
     }
 
-    set({ isBusy: true, error: null })
+    set({ isBusy: true, error: null, latestOptions: null })
 
     try {
       const planResponse = await generateProjectPlan({

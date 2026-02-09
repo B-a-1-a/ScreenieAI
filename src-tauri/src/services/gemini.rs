@@ -39,7 +39,7 @@ impl GeminiService {
             project_context, history_text
         );
 
-        let system_prompt = "You are IdeaForge's planning assistant.\nIf the project context describes interview mode, ask practical clarifying questions and set isComplete=true only when enough detail exists to generate a plan.\nIf the project context describes screen-chat mode, suggest precise UI updates and fill updatedDescription/regenerateWireframe/changesSummary.\nRespond with strict JSON in this exact shape:\n{\"reply\":\"...\",\"isComplete\":false,\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}";
+        let system_prompt = "You are IdeaForge's planning assistant.\nIf the project context describes interview mode, ask ONE focused clarifying question at a time. Provide 2-4 clickable options for the user to choose from. Always include an \"Other\" option. Set isComplete=true only when enough detail exists to generate a plan.\nIf the project context describes screen-chat mode, suggest precise UI updates and fill updatedDescription/regenerateWireframe/changesSummary (leave options null).\nRespond with strict JSON in this exact shape:\n{\"reply\":\"...\",\"isComplete\":false,\"options\":[\"Option A\",\"Option B\",\"Other\"],\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}";
 
         let response_text = self
             .generate_text_with_fallback(TEXT_MODELS, api_key, system_prompt, &prompt)
@@ -50,6 +50,7 @@ impl GeminiService {
             Err(_) => InterviewTurn {
                 reply: response_text.trim().to_string(),
                 is_complete: false,
+                options: None,
                 updated_description: None,
                 regenerate_wireframe: None,
                 changes_summary: None,
@@ -566,5 +567,41 @@ mod tests {
     fn should_not_try_next_model_for_network_errors() {
         let err = AppError::Validation("local validation failure".to_string());
         assert!(!should_try_next_model(&err));
+    }
+
+    #[test]
+    fn parse_interview_turn_with_options() {
+        let json = r#"{"reply":"What platform?","isComplete":false,"options":["Web","Mobile","Desktop","Other"],"updatedDescription":null,"regenerateWireframe":null,"changesSummary":null}"#;
+        let turn: InterviewTurn = parse_model_json(json).unwrap();
+        assert_eq!(turn.reply, "What platform?");
+        assert!(!turn.is_complete);
+        let opts = turn.options.unwrap();
+        assert_eq!(opts.len(), 4);
+        assert_eq!(opts[0], "Web");
+        assert_eq!(opts[3], "Other");
+    }
+
+    #[test]
+    fn parse_interview_turn_without_options() {
+        let json = r#"{"reply":"Tell me more","isComplete":false,"updatedDescription":null,"regenerateWireframe":null,"changesSummary":null}"#;
+        let turn: InterviewTurn = parse_model_json(json).unwrap();
+        assert_eq!(turn.reply, "Tell me more");
+        assert!(turn.options.is_none());
+    }
+
+    #[test]
+    fn parse_interview_turn_with_null_options() {
+        let json = r#"{"reply":"Got it","isComplete":true,"options":null,"updatedDescription":null,"regenerateWireframe":null,"changesSummary":null}"#;
+        let turn: InterviewTurn = parse_model_json(json).unwrap();
+        assert!(turn.is_complete);
+        assert!(turn.options.is_none());
+    }
+
+    #[test]
+    fn parse_interview_turn_from_fenced_block() {
+        let raw = "```json\n{\"reply\":\"Pick one\",\"isComplete\":false,\"options\":[\"A\",\"B\"],\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}\n```";
+        let turn: InterviewTurn = parse_model_json(raw).unwrap();
+        assert_eq!(turn.reply, "Pick one");
+        assert_eq!(turn.options.unwrap().len(), 2);
     }
 }

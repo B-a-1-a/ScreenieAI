@@ -9,15 +9,18 @@ export function InterviewPage() {
   const isBusy = useProjectStore((state) => state.isBusy)
   const error = useProjectStore((state) => state.error)
   const hasApiKey = useProjectStore((state) => state.hasApiKey)
+  const latestOptions = useProjectStore((state) => state.latestOptions)
   const submitInterviewMessage = useProjectStore((state) => state.submitInterviewMessage)
   const generatePlanFromInterview = useProjectStore((state) => state.generatePlanFromInterview)
   const getInterviewRoundCount = useProjectStore((state) => state.getInterviewRoundCount)
   const isInterviewLimitReached = useProjectStore((state) => state.isInterviewLimitReached)
 
   const [message, setMessage] = useState('')
+  const [showOtherInput, setShowOtherInput] = useState(false)
 
   const roundCount = getInterviewRoundCount()
   const limitReached = isInterviewLimitReached()
+  const hasOptions = latestOptions != null && latestOptions.length > 0
 
   useEffect(() => {
     if (!project) {
@@ -42,7 +45,17 @@ export function InterviewPage() {
       return
     }
     setMessage('')
+    setShowOtherInput(false)
     await submitInterviewMessage(content)
+  }
+
+  async function handleOptionClick(option: string): Promise<void> {
+    if (option.toLowerCase() === 'other') {
+      setShowOtherInput(true)
+      return
+    }
+    setShowOtherInput(false)
+    await submitInterviewMessage(option)
   }
 
   async function handleGeneratePlan(): Promise<void> {
@@ -108,24 +121,53 @@ export function InterviewPage() {
             color: 'var(--ink)',
           }}>
             <p style={{ fontWeight: 600, marginBottom: '0.3rem' }}>
-              ✓ Interview Complete
+              Interview Complete
             </p>
             <p style={{ fontSize: '0.9rem', color: 'var(--ink-muted)' }}>
               You've completed 3 question rounds. Ready to generate your plan!
             </p>
           </div>
         ) : (
-          <form className="chat-input" onSubmit={handleSendMessage}>
-            <input
-              disabled={isBusy}
-              placeholder="Answer the current question…"
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-            />
-            <button disabled={isBusy} type="submit">
-              Send
-            </button>
-          </form>
+          <>
+            {hasOptions && !showOtherInput && (
+              <div className="interview-options">
+                {latestOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    disabled={isBusy}
+                    className={`interview-option-btn${option.toLowerCase() === 'other' ? ' interview-option-other' : ''}`}
+                    onClick={() => void handleOptionClick(option)}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+            {(!hasOptions || showOtherInput) && (
+              <form className="chat-input" onSubmit={handleSendMessage}>
+                <input
+                  disabled={isBusy}
+                  placeholder={showOtherInput ? 'Type your own answer…' : 'Answer the current question…'}
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                />
+                <button disabled={isBusy} type="submit">
+                  Send
+                </button>
+                {showOtherInput && (
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => setShowOtherInput(false)}
+                    style={{ gridColumn: '1 / -1' }}
+                  >
+                    Back to options
+                  </button>
+                )}
+              </form>
+            )}
+          </>
         )}
 
         <div className="split">

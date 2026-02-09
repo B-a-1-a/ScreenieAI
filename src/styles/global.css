@@ -281,6 +281,49 @@ textarea {
   font-weight: 500;
 }
 
+.interview-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.interview-option-btn {
+  flex: 1 1 auto;
+  min-width: 140px;
+  padding: 0.7rem 1rem;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.interview-option-btn:hover:enabled {
+  border-color: var(--brand);
+  background: linear-gradient(135deg, #fff8f0 0%, #fff5e6 100%);
+  transform: translateY(-1px);
+}
+
+.interview-option-btn:active:enabled {
+  transform: translateY(0);
+}
+
+.interview-option-other {
+  flex: 0 1 auto;
+  min-width: auto;
+  border-style: dashed;
+  color: var(--ink-muted);
+}
+
+.interview-option-other:hover:enabled {
+  color: var(--ink);
+}
+
 .workspace-root {
   min-height: 100%;
   display: grid;
