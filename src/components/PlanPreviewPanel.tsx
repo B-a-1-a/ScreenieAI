@@ -1,6 +1,30 @@
 import { useState } from 'react'
 import type { Deliverables, AppScreen } from '../types/project'
 import { MarkdownView } from './MarkdownView'
+import { copyToClipboard } from '../lib/clipboard'
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const ok = await copyToClipboard(text)
+    if (ok) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className={`copy-btn ${copied ? 'copy-btn-success' : ''}`}
+      onClick={handleCopy}
+    >
+      {copied ? 'Copied!' : 'Copy'}
+    </button>
+  )
+}
 
 interface PlanPreviewPanelProps {
   deliverables: Deliverables
@@ -33,8 +57,11 @@ function CollapsibleSection({
         aria-expanded={open}
       >
         <span className="plan-preview-section-title">{label}</span>
-        <span className={`plan-preview-chevron ${open ? 'plan-preview-chevron-open' : ''}`}>
-          &#9662;
+        <span className="plan-preview-header-actions">
+          <span className={`plan-preview-chevron ${open ? 'plan-preview-chevron-open' : ''}`}>
+            &#9662;
+          </span>
+          {content ? <CopyButton text={content} /> : null}
         </span>
       </button>
       <div
@@ -61,6 +88,10 @@ function ScreensSection({
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false)
 
+  const screensSummary = screens
+    .map((s) => `${s.name} (${s.screenType}): ${s.description}`)
+    .join('\n')
+
   return (
     <div className="plan-preview-section">
       <button
@@ -70,8 +101,11 @@ function ScreensSection({
         aria-expanded={open}
       >
         <span className="plan-preview-section-title">Screens</span>
-        <span className={`plan-preview-chevron ${open ? 'plan-preview-chevron-open' : ''}`}>
-          &#9662;
+        <span className="plan-preview-header-actions">
+          <span className={`plan-preview-chevron ${open ? 'plan-preview-chevron-open' : ''}`}>
+            &#9662;
+          </span>
+          {screens.length > 0 ? <CopyButton text={screensSummary} /> : null}
         </span>
       </button>
       <div

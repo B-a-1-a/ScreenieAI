@@ -18,8 +18,12 @@ export function WorkspacePage() {
   const hasApiKey = useProjectStore((state) => state.hasApiKey)
   const selectedScreenId = useProjectStore((state) => state.selectedScreenId)
   const isBusy = useProjectStore((state) => state.isBusy)
+  const isDirty = useProjectStore((state) => state.isDirty)
   const error = useProjectStore((state) => state.error)
   const availableIdes = useProjectStore((state) => state.availableIdes)
+  const generatingWireframeForScreenId = useProjectStore(
+    (state) => state.generatingWireframeForScreenId,
+  )
 
   const selectScreen = useProjectStore((state) => state.selectScreen)
   const removeScreen = useProjectStore((state) => state.removeScreen)
@@ -59,6 +63,16 @@ export function WorkspacePage() {
     }
   }
 
+  function handleNavigateToProjects(): void {
+    if (isDirty) {
+      const confirmed = window.confirm('You have unsaved changes. Leave anyway?')
+      if (!confirmed) {
+        return
+      }
+    }
+    navigate('/')
+  }
+
   return (
     <main className="workspace-root">
       <header className="workspace-header">
@@ -83,7 +97,7 @@ export function WorkspacePage() {
               Open in {ide}
             </button>
           ))}
-          <button type="button" onClick={() => navigate('/')}>
+          <button type="button" onClick={handleNavigateToProjects}>
             Projects
           </button>
         </div>
@@ -104,6 +118,7 @@ export function WorkspacePage() {
           projectId={project.id}
           screens={project.screens}
           selectedScreenId={selectedScreenId}
+          generatingWireframeForScreenId={generatingWireframeForScreenId}
         />
 
         <section className="workspace-right">
@@ -111,6 +126,7 @@ export function WorkspacePage() {
             screen={selectedScreen}
             deliverables={project.deliverables}
             onUpdateScreen={updateScreen}
+            isGeneratingWireframe={generatingWireframeForScreenId === selectedScreenId}
           />
           <ScreenChatPanel
             messages={selectedScreen?.chatHistory ?? []}

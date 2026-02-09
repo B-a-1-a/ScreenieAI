@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { Toast } from './components/Toast'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import { useUnsavedWarning } from './hooks/useUnsavedWarning'
 import { InterviewPage } from './pages/InterviewPage'
 import { NewProjectPage } from './pages/NewProjectPage'
 import { ProjectSelectorPage } from './pages/ProjectSelectorPage'
@@ -10,6 +12,7 @@ import { useProjectStore } from './store/projectStore'
 function AppRoutes() {
   const navigate = useNavigate()
   useKeyboardShortcuts(navigate)
+  useUnsavedWarning()
 
   return (
     <Routes>
@@ -32,6 +35,7 @@ export default function App() {
   return (
     <HashRouter>
       <AppRoutes />
+      <Toast />
     </HashRouter>
   )
 }

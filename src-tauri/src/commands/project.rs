@@ -29,3 +29,8 @@ pub fn delete_project(path: String) -> AppResult<()> {
 pub fn export_project(input: ExportInput) -> AppResult<ExportResult> {
     project_storage::export_project_artifacts(&input.project)
 }
+
+#[tauri::command]
+pub fn duplicate_project(source_path: String, new_name: String) -> AppResult<()> {
+    project_storage::duplicate_project(&source_path, &new_name)
+}

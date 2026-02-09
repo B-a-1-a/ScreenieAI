@@ -272,6 +272,35 @@ pub fn export_project_artifacts(project: &ProjectState) -> AppResult<ExportResul
     export_project_artifacts_in_root(&docs_root, project)
 }
 
+fn duplicate_project_in_root(
+    docs_root: &Path,
+    source_path: &str,
+    new_name: &str,
+) -> AppResult<()> {
+    let mut project = load_project_state_in_root(docs_root, source_path)?;
+
+    let new_name_trimmed = new_name.trim();
+    if new_name_trimmed.is_empty() {
+        return Err(AppError::Validation(
+            "New project name must not be empty".to_string(),
+        ));
+    }
+
+    let now = Utc::now();
+    project.name = new_name_trimmed.to_string();
+    project.id = format!("project-{}", now.timestamp_millis());
+    project.created_at = now.to_rfc3339();
+    project.updated_at = now.to_rfc3339();
+
+    save_project_state_in_root(docs_root, &project)?;
+    Ok(())
+}
+
+pub fn duplicate_project(source_path: &str, new_name: &str) -> AppResult<()> {
+    let docs_root = idea_forge_root()?;
+    duplicate_project_in_root(&docs_root, source_path, new_name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -377,5 +406,54 @@ mod tests {
                 .iter()
                 .any(|path| path.ends_with("wireframes/01-home.png"))
         );
+    }
+
+    #[test]
+    fn duplicate_project_creates_new_project_with_different_name() {
+        let temp = TempDir::new().expect("temp dir");
+        let docs_root = temp.path().join("IdeaForge");
+        fs::create_dir_all(&docs_root).expect("create docs root");
+
+        let project = fixture_project();
+        let project_root = save_project_state_in_root(&docs_root, &project).expect("save project");
+
+        duplicate_project_in_root(
+            &docs_root,
+            &project_root.to_string_lossy(),
+            "Demo Planner Copy",
+        )
+        .expect("duplicate project");
+
+        let listed = list_saved_projects_in_root(&docs_root).expect("list projects");
+        assert_eq!(listed.len(), 2);
+
+        let names: Vec<&str> = listed.iter().map(|p| p.name.as_str()).collect();
+        assert!(names.contains(&"Demo Planner"));
+        assert!(names.contains(&"Demo Planner Copy"));
+
+        // Load the duplicate and verify it has a new ID
+        let copy_summary = listed.iter().find(|p| p.name == "Demo Planner Copy").unwrap();
+        let copy = load_project_state_in_root(&docs_root, &copy_summary.path)
+            .expect("load duplicate");
+        assert_ne!(copy.id, project.id);
+        assert_eq!(copy.description, project.description);
+        assert_eq!(copy.screens.len(), project.screens.len());
+    }
+
+    #[test]
+    fn duplicate_project_rejects_empty_name() {
+        let temp = TempDir::new().expect("temp dir");
+        let docs_root = temp.path().join("IdeaForge");
+        fs::create_dir_all(&docs_root).expect("create docs root");
+
+        let project = fixture_project();
+        let project_root = save_project_state_in_root(&docs_root, &project).expect("save project");
+
+        let result = duplicate_project_in_root(
+            &docs_root,
+            &project_root.to_string_lossy(),
+            "   ",
+        );
+        assert!(result.is_err());
     }
 }

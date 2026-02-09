@@ -26,6 +26,7 @@ pub fn run() {
             load_project,
             list_projects,
             delete_project,
+            duplicate_project,
             export_project,
             open_in_ide,
             detect_ides,

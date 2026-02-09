@@ -3,6 +3,7 @@ import {
   clearGeminiApiKey,
   deleteProject,
   detectIdes,
+  duplicateProject,
   editWireframe,
   exportProject,
   generateProjectPlan,
@@ -16,6 +17,7 @@ import {
   setGeminiApiKey,
 } from '../lib/commands'
 import { normalizePlanOutput } from '../lib/validation'
+import { useToastStore } from './toastStore'
 import type {
   AppScreen,
   CanvasRegion,
@@ -30,9 +32,11 @@ interface ProjectStoreState {
   projects: ProjectSummary[]
   currentProject: ProjectState | null
   selectedScreenId: string | null
+  generatingWireframeForScreenId: string | null
   availableIdes: string[]
   hasApiKey: boolean
   isBusy: boolean
+  isDirty: boolean
   error: string | null
   latestOptions: string[] | null
   initialize: () => Promise<void>
@@ -51,6 +55,7 @@ interface ProjectStoreState {
   regenerateWireframeForSelected: () => Promise<void>
   exportCurrentProject: () => Promise<ExportResult | null>
   deleteProjectByPath: (path: string) => Promise<void>
+  duplicateProjectByPath: (sourcePath: string, newName: string) => Promise<void>
   openCurrentProjectInIde: (ide: 'cursor' | 'code' | 'windsurf') => Promise<void>
   getInterviewRoundCount: () => number
   isInterviewLimitReached: () => boolean
@@ -162,9 +167,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   projects: [],
   currentProject: null,
   selectedScreenId: null,
+  generatingWireframeForScreenId: null,
   availableIdes: [],
   hasApiKey: false,
   isBusy: false,
+  isDirty: false,
   error: null,
   latestOptions: null,
 
@@ -184,10 +191,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         isBusy: false,
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to initialize app state')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Failed to initialize app state'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -219,12 +228,15 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         currentProject: project,
         selectedScreenId: project.screens[0]?.id ?? null,
         isBusy: false,
+        isDirty: false,
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to load project')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Failed to load project'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -241,12 +253,16 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       set({
         projects: projectList,
         isBusy: false,
+        isDirty: false,
       })
+      useToastStore.getState().addToast('Project saved', 'success')
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to save project')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Failed to save project'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -267,6 +283,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         hasApiKey: false,
         error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -276,10 +293,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       await clearGeminiApiKey()
       set({ hasApiKey: false, isBusy: false })
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to clear API key')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Failed to clear API key'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -334,6 +353,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       set({
         isBusy: false,
+        isDirty: true,
         latestOptions: turn.options ?? null,
         currentProject: {
           ...current,
@@ -348,6 +368,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
         error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -390,6 +411,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         selectedScreenId: screens[0]?.id ?? null,
         projects: projectList,
         isBusy: false,
+        isDirty: false,
       })
     } catch (error) {
       const message = toErrorMessage(error, 'Plan generation failed')
@@ -398,6 +420,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
         error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -423,6 +446,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         screens: remainingScreens,
       },
       selectedScreenId: nextSelectedId,
+      isDirty: true,
     })
   },
 
@@ -450,6 +474,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     set({
       currentProject: nextProject,
       selectedScreenId: newScreen.id,
+      isDirty: true,
     })
   },
 
@@ -475,6 +500,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         updatedAt: nowIso(),
         screens: updatedScreens,
       },
+      isDirty: true,
     })
   },
 
@@ -544,6 +570,8 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       }
 
       if (turn.regenerateWireframe) {
+        set({ generatingWireframeForScreenId: selectedScreenId })
+
         const wireframe = await editWireframe({
           existingImageBase64: updatedScreen.wireframeBase64 ?? '',
           editInstruction: content,
@@ -564,15 +592,18 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       set({
         isBusy: false,
+        generatingWireframeForScreenId: null,
         currentProject: upsertScreen(current, updatedScreen),
       })
     } catch (error) {
       const message = toErrorMessage(error, 'Screen chat failed')
       set({
         isBusy: false,
+        generatingWireframeForScreenId: null,
         hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
         error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -590,7 +621,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       return
     }
 
-    set({ isBusy: true, error: null })
+    set({ isBusy: true, error: null, generatingWireframeForScreenId: selectedScreenId })
 
     try {
       const wireframe = await generateWireframe({
@@ -601,13 +632,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       const current = get().currentProject
       if (!current) {
-        set({ isBusy: false })
+        set({ isBusy: false, generatingWireframeForScreenId: null })
         return
       }
 
       const currentScreen = current.screens.find((value) => value.id === selectedScreenId)
       if (!currentScreen) {
-        set({ isBusy: false })
+        set({ isBusy: false, generatingWireframeForScreenId: null })
         return
       }
 
@@ -618,15 +649,18 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
 
       set({
         isBusy: false,
+        generatingWireframeForScreenId: null,
         currentProject: upsertScreen(current, updated),
       })
     } catch (error) {
       const message = toErrorMessage(error, 'Wireframe generation failed')
       set({
         isBusy: false,
+        generatingWireframeForScreenId: null,
         hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
         error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -641,12 +675,15 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     try {
       const result = await exportProject(project)
       set({ isBusy: false })
+      useToastStore.getState().addToast(`Project exported to ${result.exportRoot}`, 'success')
       return result
     } catch (error) {
+      const message = toErrorMessage(error, 'Project export failed')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Project export failed'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
       return null
     }
   },
@@ -661,10 +698,31 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         isBusy: false,
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to delete project')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Failed to delete project'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
+    }
+  },
+
+  duplicateProjectByPath: async (sourcePath, newName) => {
+    set({ isBusy: true, error: null })
+    try {
+      await duplicateProject(sourcePath, newName)
+      const projectList = await listProjects()
+      set({
+        projects: projectList,
+        isBusy: false,
+      })
+    } catch (error) {
+      const message = toErrorMessage(error, 'Failed to duplicate project')
+      set({
+        isBusy: false,
+        error: message,
+      })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 
@@ -685,10 +743,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
       await openInIde(match.path, ide)
       set({ isBusy: false })
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to open IDE')
       set({
         isBusy: false,
-        error: toErrorMessage(error, 'Failed to open IDE'),
+        error: message,
       })
+      useToastStore.getState().addToast(message, 'error')
     }
   },
 

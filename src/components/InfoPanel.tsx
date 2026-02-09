@@ -1,10 +1,35 @@
+import { useState } from 'react'
 import type { AppScreen, Deliverables, ScreenType } from '../types/project'
 import { MarkdownView } from './MarkdownView'
+import { copyToClipboard } from '../lib/clipboard'
+
+function CopyInlineButton({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    const ok = await copyToClipboard(text)
+    if (ok) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className={`copy-btn ${copied ? 'copy-btn-success' : ''}`}
+      onClick={handleCopy}
+    >
+      {copied ? 'Copied!' : label}
+    </button>
+  )
+}
 
 interface InfoPanelProps {
   screen: AppScreen | null
   deliverables: Deliverables
   onUpdateScreen: (screenId: string, patch: Partial<AppScreen>) => void
+  isGeneratingWireframe: boolean
 }
 
 function deliverableSummary(deliverables: Deliverables): string {
@@ -17,7 +42,7 @@ function deliverableSummary(deliverables: Deliverables): string {
   return 'No plan deliverables generated yet.'
 }
 
-export function InfoPanel({ screen, deliverables, onUpdateScreen }: InfoPanelProps) {
+export function InfoPanel({ screen, deliverables, onUpdateScreen, isGeneratingWireframe }: InfoPanelProps) {
   if (!screen) {
     return (
       <section className="panel info-panel">
@@ -67,8 +92,20 @@ export function InfoPanel({ screen, deliverables, onUpdateScreen }: InfoPanelPro
         onChange={(event) => onUpdateScreen(screen.id, { description: event.target.value })}
         rows={8}
       />
+      <CopyInlineButton text={screen.description} label="Copy Description" />
 
-      {screen.wireframeBase64 ? (
+      {isGeneratingWireframe ? (
+        <div className="wireframe-placeholder">
+          <div className="wireframe-generating-text">
+            Generating wireframe
+            <span className="loading-dots">
+              <span>.</span>
+              <span>.</span>
+              <span>.</span>
+            </span>
+          </div>
+        </div>
+      ) : screen.wireframeBase64 ? (
         <img
           alt={`${screen.name} wireframe`}
           className="wireframe-preview"
@@ -79,6 +116,7 @@ export function InfoPanel({ screen, deliverables, onUpdateScreen }: InfoPanelPro
       <div className="deliverable-preview">
         <h4>Plan Snapshot</h4>
         <MarkdownView content={deliverableSummary(deliverables)} />
+        <CopyInlineButton text={deliverableSummary(deliverables)} label="Copy Plan Snapshot" />
       </div>
     </section>
   )

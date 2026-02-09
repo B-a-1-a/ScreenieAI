@@ -28,6 +28,8 @@ vi.mock('../lib/commands', () => ({
   editWireframe: vi.fn().mockResolvedValue({ imageBase64: '', text: '', mimeType: 'image/png' }),
   saveProject: vi.fn().mockResolvedValue(undefined),
   loadProject: vi.fn().mockResolvedValue(null),
+  deleteProject: vi.fn().mockResolvedValue(undefined),
+  duplicateProject: vi.fn().mockResolvedValue(undefined),
   exportProject: vi.fn().mockResolvedValue({ exportRoot: '', files: [] }),
   openInIde: vi.fn().mockResolvedValue(undefined),
 }))
@@ -251,5 +253,46 @@ describe('projectStore interview options', () => {
 
     expect(useProjectStore.getState().getInterviewRoundCount()).toBe(3)
     expect(useProjectStore.getState().isInterviewLimitReached()).toBe(true)
+  })
+})
+
+describe('projectStore duplicateProject', () => {
+  beforeEach(() => {
+    resetStore()
+    vi.clearAllMocks()
+  })
+
+  it('calls duplicateProject command and refreshes the project list', async () => {
+    const { duplicateProject, listProjects } = await import('../lib/commands')
+
+    const updatedList = [
+      { name: 'My App', path: '/docs/my-app', updatedAt: '2026-01-01T00:00:00Z' },
+      { name: 'My App (Copy)', path: '/docs/my-app-copy', updatedAt: '2026-01-02T00:00:00Z' },
+    ]
+    ;(listProjects as ReturnType<typeof vi.fn>).mockResolvedValueOnce(updatedList)
+
+    await useProjectStore.getState().duplicateProjectByPath('/docs/my-app', 'My App (Copy)')
+
+    expect(duplicateProject).toHaveBeenCalledWith('/docs/my-app', 'My App (Copy)')
+    expect(listProjects).toHaveBeenCalled()
+
+    const state = useProjectStore.getState()
+    expect(state.projects).toHaveLength(2)
+    expect(state.projects[1]!.name).toBe('My App (Copy)')
+    expect(state.isBusy).toBe(false)
+    expect(state.error).toBeNull()
+  })
+
+  it('sets error when duplicateProject command fails', async () => {
+    const { duplicateProject } = await import('../lib/commands')
+    ;(duplicateProject as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('Name conflict'),
+    )
+
+    await useProjectStore.getState().duplicateProjectByPath('/docs/my-app', 'Existing Name')
+
+    const state = useProjectStore.getState()
+    expect(state.error).toBe('Name conflict')
+    expect(state.isBusy).toBe(false)
   })
 })

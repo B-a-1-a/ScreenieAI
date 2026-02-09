@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
 
@@ -8,6 +8,7 @@ export function ProjectSelectorPage() {
   const hasApiKey = useProjectStore((state) => state.hasApiKey)
   const loadProjectFromPath = useProjectStore((state) => state.loadProjectFromPath)
   const deleteProjectByPath = useProjectStore((state) => state.deleteProjectByPath)
+  const duplicateProjectByPath = useProjectStore((state) => state.duplicateProjectByPath)
   const setApiKey = useProjectStore((state) => state.setApiKey)
   const clearApiKey = useProjectStore((state) => state.clearApiKey)
   const isBusy = useProjectStore((state) => state.isBusy)
@@ -15,6 +16,15 @@ export function ProjectSelectorPage() {
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [apiKeyDraft, setApiKeyDraft] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredProjects = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) {
+      return projects
+    }
+    return projects.filter((project) => project.name.toLowerCase().includes(query))
+  }, [projects, searchQuery])
 
   async function openProject(path: string): Promise<void> {
     if (!hasApiKey) {
@@ -44,6 +54,14 @@ export function ProjectSelectorPage() {
       return
     }
     await deleteProjectByPath(path)
+  }
+
+  async function handleDuplicate(path: string, name: string): Promise<void> {
+    const newName = window.prompt(`Duplicate "${name}" as:`, `${name} (Copy)`)
+    if (!newName || !newName.trim()) {
+      return
+    }
+    await duplicateProjectByPath(path, newName.trim())
   }
 
   return (
@@ -109,23 +127,42 @@ export function ProjectSelectorPage() {
           <p className="error-text">Set Gemini API key in Settings before creating or opening projects.</p>
         ) : null}
 
+        {projects.length > 0 ? (
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search projects by name..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+        ) : null}
+
         {projects.length === 0 ? (
           <p className="muted">No saved projects found in ~/Documents/IdeaForge.</p>
+        ) : filteredProjects.length === 0 ? (
+          <p className="muted">No projects match your search.</p>
         ) : (
           <div className="project-list">
-            {projects.map((project) => (
+            {filteredProjects.map((project) => (
               <article className="project-item" key={project.path}>
                 <div>
                   <h3>{project.name}</h3>
                   <p className="muted">Updated {new Date(project.updatedAt).toLocaleString()}</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <div className="project-actions">
                   <button
                     disabled={!hasApiKey || isBusy}
                     type="button"
                     onClick={() => void openProject(project.path)}
                   >
                     Open
+                  </button>
+                  <button
+                    disabled={isBusy}
+                    type="button"
+                    onClick={() => void handleDuplicate(project.path, project.name)}
+                  >
+                    Duplicate
                   </button>
                   <button
                     disabled={isBusy}
