@@ -18,6 +18,7 @@ export function InterviewPage() {
 
   const [message, setMessage] = useState('')
   const [showOtherInput, setShowOtherInput] = useState(false)
+  const [generatingPlan, setGeneratingPlan] = useState(false)
   const chatLogRef = useRef<HTMLDivElement>(null)
 
   const roundCount = getInterviewRoundCount()
@@ -67,10 +68,13 @@ export function InterviewPage() {
   }
 
   async function handleGeneratePlan(): Promise<void> {
+    setGeneratingPlan(true)
     await generatePlanFromInterview()
     const nextProject = useProjectStore.getState().currentProject
     if (nextProject?.screens.length) {
       navigate('/workspace')
+    } else {
+      setGeneratingPlan(false)
     }
   }
 
@@ -208,6 +212,32 @@ export function InterviewPage() {
       </section>
 
       <PlanPreviewPanel deliverables={deliverables} screens={screens} />
+
+      {generatingPlan && (
+        <div className="modal-overlay">
+          <div className="plan-generating-card">
+            <div className="plan-generating-icon">
+              <span className="plan-generating-spinner" />
+            </div>
+            <h2>Building Your Plan</h2>
+            <p className="muted">
+              Gemini is generating your project architecture, feature list,
+              screen map, and tech stack recommendations.
+            </p>
+            <div className="plan-generating-steps">
+              <div className="plan-generating-step active">App Overview</div>
+              <div className="plan-generating-step active">Feature List</div>
+              <div className="plan-generating-step active">App Flow</div>
+              <div className="plan-generating-step active">Tech Stack</div>
+              <div className="plan-generating-step active">Screen Map</div>
+            </div>
+            <p className="plan-generating-hint">
+              This usually takes a few moments
+              <span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

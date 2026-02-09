@@ -1251,3 +1251,118 @@ textarea {
 .screen-item[draggable="true"]:hover {
   padding-left: 1.2rem;
 }
+
+/* ── Plan Generation Overlay ───────────────────────── */
+
+.plan-generating-card {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  width: calc(100% - 2rem);
+  text-align: center;
+  box-shadow:
+    0 24px 64px rgba(14, 31, 52, 0.2),
+    0 4px 16px rgba(14, 31, 52, 0.1);
+  animation: typing-fade-in 0.4s ease-out;
+}
+
+.plan-generating-card h2 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.plan-generating-card .muted {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.plan-generating-icon {
+  display: flex;
+  justify-content: center;
+}
+
+.plan-generating-spinner {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--line);
+  border-top-color: var(--brand);
+  border-radius: 50%;
+  animation: plan-spin 0.8s linear infinite;
+}
+
+@keyframes plan-spin {
+  to { transform: rotate(360deg); }
+}
+
+.plan-generating-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1.5rem 0 1rem;
+}
+
+.plan-generating-step {
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  color: var(--ink-muted);
+}
+
+.plan-generating-step.active {
+  background: linear-gradient(135deg, #fff6ee 0%, #fff0e0 100%);
+  border-color: #ffd0b0;
+  color: var(--brand);
+  animation: step-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes step-pulse {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+.plan-generating-hint {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  margin-top: 0.5rem;
+}
+
+/* ── Workspace Welcome Banner ──────────────────────── */
+
+.workspace-welcome {
+  background: linear-gradient(135deg, #fff8ed 0%, #f0f8ff 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  animation: typing-fade-in 0.3s ease-out;
+}
+
+.workspace-welcome-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.workspace-welcome-content p {
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.workspace-welcome-content button {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.75rem;
+}

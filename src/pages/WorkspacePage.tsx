@@ -13,6 +13,7 @@ export function WorkspacePage() {
 
   const [exportResult, setExportResult] = useState<ExportResult | null>(null)
   const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(true)
 
   const project = useProjectStore((state) => state.currentProject)
   const hasApiKey = useProjectStore((state) => state.hasApiKey)
@@ -103,6 +104,20 @@ export function WorkspacePage() {
           </button>
         </div>
       </header>
+
+      {showWelcome && project.screens.length > 0 && project.deliverables.appHighLevel && (
+        <div className="workspace-welcome">
+          <div className="workspace-welcome-content">
+            <p>
+              Plan generated with {project.screens.length} screens.
+              Select a screen to view details, chat, or generate wireframes.
+            </p>
+            <button type="button" onClick={() => setShowWelcome(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       <section className="workspace-grid">
         <ScreensSidebar
