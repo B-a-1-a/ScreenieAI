@@ -126,17 +126,18 @@ Screens can be one of two types:
 
 ---
 
-## Tech Stack
+## Tech Stack (Updated February 2026)
 
 | Layer | Choice | Why |
 |-------|--------|-----|
-| Desktop shell | **Tauri v2** | Native filesystem, small binary |
-| Frontend | **React 19 + Vite + TypeScript** | First-class Tauri support |
-| Canvas | **tldraw** | Infinite canvas SDK, pan/zoom, drawing tools, export API |
-| Styling | **Tailwind CSS + shadcn/ui** | Fast polished UI |
-| AI (text) | **Gemini 2.5 Flash / Gemini 3 Pro** | Hackathon requirement |
-| AI (images) | **Nano Banana (gemini-2.5-flash-image)** | Whiteboard/wireframe generation |
-| State | **Zustand** | Lightweight global state |
+| Desktop shell | **Tauri v2** (Latest: 2.x stable) | Native filesystem, small binary, production-ready |
+| Frontend | **React 19 + Vite 6 + TypeScript 5.7** | 40x faster builds than CRA, instant HMR |
+| Canvas | **tldraw v4.2+** | Infinite canvas SDK, pan/zoom, drawing tools, export API |
+| Styling | **Tailwind CSS v4 + shadcn/ui** | CSS-first config, fast polished UI, tw-animate-css |
+| AI (text) | **Gemini 2.5 Flash / Gemini 3 Pro** | Structured JSON output, 1M context window |
+| AI (images) | **Gemini 2.5 Flash Image** (Nano Banana) + **Nano Banana Pro** (Gemini 3 Pro Image) | Fast wireframes (2.5 Flash) OR high-quality 2K/4K with text rendering (Pro) |
+| State | **Zustand v5** | Multiple small stores, 30%+ YoY growth, minimal boilerplate |
+| SDK | **@google/genai v1.40+** | Unified Google GenAI SDK (GA), replaces deprecated @google/generative-ai |
 
 ---
 
@@ -146,7 +147,7 @@ Screens can be one of two types:
 
 ```typescript
 // src/lib/gemini.ts
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenAI } from '@google/genai'  // v1.40+ (GA since May 2025)
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY })
 
@@ -155,7 +156,7 @@ export async function chat(params: {
   systemPrompt: string
 }) {
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-2.5-flash',  // 1M context window
     contents: params.messages.map(m => ({
       role: m.role,
       parts: [{ text: m.text }],
