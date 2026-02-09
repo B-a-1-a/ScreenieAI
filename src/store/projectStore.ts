@@ -50,6 +50,7 @@ interface ProjectStoreState {
   selectScreen: (screenId: string) => void
   removeScreen: (screenId: string) => void
   addScreen: (name: string, screenType: ScreenType) => void
+  reorderScreens: (fromIndex: number, toIndex: number) => void
   updateScreen: (screenId: string, patch: Partial<AppScreen>) => void
   submitScreenMessage: (content: string) => Promise<void>
   regenerateWireframeForSelected: () => Promise<void>
@@ -474,6 +475,36 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     set({
       currentProject: nextProject,
       selectedScreenId: newScreen.id,
+      isDirty: true,
+    })
+  },
+
+  reorderScreens: (fromIndex, toIndex) => {
+    const project = get().currentProject
+    if (!project) {
+      return
+    }
+
+    const screens = [...project.screens]
+    if (
+      fromIndex < 0 ||
+      fromIndex >= screens.length ||
+      toIndex < 0 ||
+      toIndex >= screens.length ||
+      fromIndex === toIndex
+    ) {
+      return
+    }
+
+    const [moved] = screens.splice(fromIndex, 1)
+    screens.splice(toIndex, 0, moved)
+
+    set({
+      currentProject: {
+        ...project,
+        updatedAt: nowIso(),
+        screens,
+      },
       isDirty: true,
     })
   },
