@@ -150,9 +150,9 @@ export function InterviewPage() {
           <>
             {hasOptions && !showOtherInput && (
               <div className="interview-options">
-                {latestOptions.map((option) => (
+                {latestOptions.map((option, index) => (
                   <button
-                    key={option}
+                    key={`${option}-${index}`}
                     type="button"
                     disabled={isBusy}
                     className={`interview-option-btn${option.toLowerCase() === 'other' ? ' interview-option-other' : ''}`}

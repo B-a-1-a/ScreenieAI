@@ -724,9 +724,13 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     try {
       await deleteProject(path)
       const projectList = await listProjects()
+      const current = get().currentProject
+      const deletedCurrent = current && path.includes(current.name)
       set({
         projects: projectList,
         isBusy: false,
+        isDirty: false,
+        ...(deletedCurrent ? { currentProject: null, selectedScreenId: null } : {}),
       })
     } catch (error) {
       const message = toErrorMessage(error, 'Failed to delete project')
