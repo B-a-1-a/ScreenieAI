@@ -59,7 +59,7 @@ coverage/
 # Rust
 **/*.rs.bk
 *.pdb
-Cargo.lock
+# Note: Cargo.lock should be committed for applications (removed from gitignore)
 
 # Project-specific
 .ideaforge/

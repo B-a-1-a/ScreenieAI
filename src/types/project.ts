@@ -11,6 +11,7 @@ export interface ChatMessage {
 export interface InterviewTurn {
   reply: string
   isComplete: boolean
+  options?: string[] | null
   updatedDescription?: string | null
   regenerateWireframe?: boolean | null
   changesSummary?: string | null

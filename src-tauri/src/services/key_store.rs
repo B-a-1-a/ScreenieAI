@@ -65,6 +65,14 @@ fn set_api_key_with_path(path: &Path, value: &str) -> AppResult<()> {
 }
 
 fn read_api_key_with_path(path: &Path) -> AppResult<String> {
+    // First try to read from environment variable
+    if let Ok(env_key) = std::env::var("GEMINI_API_KEY") {
+        if !env_key.trim().is_empty() {
+            return Ok(env_key.trim().to_string());
+        }
+    }
+
+    // Fall back to file-based storage
     let settings = read_settings(path)?;
     let value = settings
         .gemini_api_key
@@ -80,6 +88,14 @@ fn read_api_key_with_path(path: &Path) -> AppResult<String> {
 }
 
 fn has_api_key_with_path(path: &Path) -> AppResult<bool> {
+    // Check environment variable first
+    if let Ok(env_key) = std::env::var("GEMINI_API_KEY") {
+        if !env_key.trim().is_empty() {
+            return Ok(true);
+        }
+    }
+
+    // Fall back to file-based storage
     match read_api_key_with_path(path) {
         Ok(_) => Ok(true),
         Err(AppError::Validation(_)) => Ok(false),

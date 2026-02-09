@@ -21,6 +21,7 @@ pub struct ChatTurn {
 pub struct InterviewTurn {
     pub reply: String,
     pub is_complete: bool,
+    pub options: Option<Vec<String>>,
     pub updated_description: Option<String>,
     pub regenerate_wireframe: Option<bool>,
     pub changes_summary: Option<String>,

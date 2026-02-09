@@ -48,7 +48,11 @@ interface ProjectStoreState {
   regenerateWireframeForSelected: () => Promise<void>
   exportCurrentProject: () => Promise<ExportResult | null>
   openCurrentProjectInIde: (ide: 'cursor' | 'code' | 'windsurf') => Promise<void>
+  getInterviewRoundCount: () => number
+  isInterviewLimitReached: () => boolean
 }
+
+const MAX_INTERVIEW_ROUNDS = 3
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -278,6 +282,15 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     const state = get()
     const project = state.currentProject
     if (!project) {
+      return
+    }
+
+    // Check if interview limit reached
+    const modelMessageCount = project.interviewHistory.filter((msg) => msg.role === 'model').length
+    if (modelMessageCount >= MAX_INTERVIEW_ROUNDS) {
+      set({
+        error: `Interview limited to ${MAX_INTERVIEW_ROUNDS} question rounds. Please generate your plan.`,
+      })
       return
     }
 
@@ -630,5 +643,22 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         error: toErrorMessage(error, 'Failed to open IDE'),
       })
     }
+  },
+
+  getInterviewRoundCount: () => {
+    const project = get().currentProject
+    if (!project) {
+      return 0
+    }
+    return project.interviewHistory.filter((msg) => msg.role === 'model').length
+  },
+
+  isInterviewLimitReached: () => {
+    const project = get().currentProject
+    if (!project) {
+      return false
+    }
+    const modelMessageCount = project.interviewHistory.filter((msg) => msg.role === 'model').length
+    return modelMessageCount >= MAX_INTERVIEW_ROUNDS
   },
 }))
