@@ -11,8 +11,6 @@ pub enum AppError {
     Serde(#[from] serde_json::Error),
     #[error("Network error: {0}")]
     Network(#[from] reqwest::Error),
-    #[error("Keychain error: {0}")]
-    Keyring(#[from] keyring::Error),
     #[error("Gemini error: {0}")]
     Gemini(String),
     #[error("Command error: {0}")]

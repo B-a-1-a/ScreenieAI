@@ -1,13 +1,24 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
 
 export function NewProjectPage() {
   const navigate = useNavigate()
   const createProjectDraft = useProjectStore((state) => state.createProjectDraft)
+  const hasApiKey = useProjectStore((state) => state.hasApiKey)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+
+  useEffect(() => {
+    if (!hasApiKey) {
+      navigate('/')
+    }
+  }, [hasApiKey, navigate])
+
+  if (!hasApiKey) {
+    return <main className="page">Redirecting to home...</main>
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault()

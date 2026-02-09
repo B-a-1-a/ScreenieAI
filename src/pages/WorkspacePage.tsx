@@ -10,6 +10,7 @@ export function WorkspacePage() {
   const navigate = useNavigate()
 
   const project = useProjectStore((state) => state.currentProject)
+  const hasApiKey = useProjectStore((state) => state.hasApiKey)
   const selectedScreenId = useProjectStore((state) => state.selectedScreenId)
   const isBusy = useProjectStore((state) => state.isBusy)
   const error = useProjectStore((state) => state.error)
@@ -32,7 +33,13 @@ export function WorkspacePage() {
     }
   }, [navigate, project])
 
-  if (!project) {
+  useEffect(() => {
+    if (!hasApiKey) {
+      navigate('/')
+    }
+  }, [hasApiKey, navigate])
+
+  if (!project || !hasApiKey) {
     return <main className="page">Loading workspace...</main>
   }
 

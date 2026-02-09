@@ -69,7 +69,14 @@ open src-tauri/target/release/bundle/macos/IdeaForge.app
 ## Gemini API Key
 
 The app uses backend-managed Gemini calls.  
-Set your key in the app during the Interview phase. The key is stored in your OS keychain via Rust (`keyring`) and is not exposed in frontend env vars.
+Set your key from the Home page `Settings` panel before starting a project.  
+The key is stored locally in:
+
+```text
+~/.ideaforge/settings.json
+```
+
+Users cannot continue to New Project / Interview / Workspace routes until a Gemini API key is configured.
 
 ## Test and Validate
 
