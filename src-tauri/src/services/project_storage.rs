@@ -11,7 +11,7 @@ use crate::{
     models::{ExportResult, ProjectState, ProjectSummary},
 };
 
-use super::paths::{ensure_within_root, idea_forge_root, slugify};
+use super::paths::{ensure_within_root, screenie_root, slugify};
 
 fn project_root_for_name(docs_root: &Path, name: &str) -> AppResult<PathBuf> {
     let slug = slugify(name);
@@ -24,7 +24,7 @@ fn project_root_for_name(docs_root: &Path, name: &str) -> AppResult<PathBuf> {
 }
 
 fn project_json_path(project_root: &Path) -> PathBuf {
-    project_root.join(".ideaforge").join("project.json")
+    project_root.join(".screenie").join("project.json")
 }
 
 fn write_text_checked(root: &Path, relative_path: &str, content: &str) -> AppResult<PathBuf> {
@@ -41,7 +41,7 @@ fn write_text_checked(root: &Path, relative_path: &str, content: &str) -> AppRes
 
 fn build_agents_context(project: &ProjectState) -> String {
     let mut buffer = String::new();
-    buffer.push_str("# IdeaForge Project Context\n\n");
+    buffer.push_str("# Screenie Project Context\n\n");
     buffer.push_str(&format!("## Project\n{}\n\n", project.name));
     buffer.push_str("## Description\n");
     buffer.push_str(&project.description);
@@ -64,8 +64,8 @@ fn build_agents_context(project: &ProjectState) -> String {
 
 fn save_project_state_in_root(docs_root: &Path, project: &ProjectState) -> AppResult<PathBuf> {
     let root = project_root_for_name(docs_root, &project.name)?;
-    let ideaforge_dir = root.join(".ideaforge");
-    fs::create_dir_all(&ideaforge_dir)?;
+    let screenie_dir = root.join(".screenie");
+    fs::create_dir_all(&screenie_dir)?;
 
     let mut project_to_persist = project.clone();
     project_to_persist.updated_at = Utc::now().to_rfc3339();
@@ -196,7 +196,7 @@ fn export_project_artifacts_in_root(
     files.push(
         write_text_checked(
             &project_root,
-            "agents/ideaforge-context.md",
+            "agents/screenie-context.md",
             &build_agents_context(project),
         )?
         .to_string_lossy()
@@ -237,22 +237,22 @@ fn export_project_artifacts_in_root(
 }
 
 pub fn save_project_state(project: &ProjectState) -> AppResult<PathBuf> {
-    let docs_root = idea_forge_root()?;
+    let docs_root = screenie_root()?;
     save_project_state_in_root(&docs_root, project)
 }
 
 pub fn load_project_state(path: &str) -> AppResult<ProjectState> {
-    let docs_root = idea_forge_root()?;
+    let docs_root = screenie_root()?;
     load_project_state_in_root(&docs_root, path)
 }
 
 pub fn list_saved_projects() -> AppResult<Vec<ProjectSummary>> {
-    let docs_root = idea_forge_root()?;
+    let docs_root = screenie_root()?;
     list_saved_projects_in_root(&docs_root)
 }
 
 pub fn delete_project(path: &str) -> AppResult<()> {
-    let docs_root = idea_forge_root()?;
+    let docs_root = screenie_root()?;
     let project_path = PathBuf::from(path);
     let safe_path = ensure_within_root(&docs_root, &project_path)?;
 
@@ -268,7 +268,7 @@ pub fn delete_project(path: &str) -> AppResult<()> {
 }
 
 pub fn export_project_artifacts(project: &ProjectState) -> AppResult<ExportResult> {
-    let docs_root = idea_forge_root()?;
+    let docs_root = screenie_root()?;
     export_project_artifacts_in_root(&docs_root, project)
 }
 
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn save_load_list_roundtrip() {
         let temp = TempDir::new().expect("temp dir");
-        let docs_root = temp.path().join("IdeaForge");
+        let docs_root = temp.path().join("Screenie");
         fs::create_dir_all(&docs_root).expect("create docs root");
 
         let project = fixture_project();
@@ -358,7 +358,7 @@ mod tests {
     #[test]
     fn export_writes_markdown_and_wireframes() {
         let temp = TempDir::new().expect("temp dir");
-        let docs_root = temp.path().join("IdeaForge");
+        let docs_root = temp.path().join("Screenie");
         fs::create_dir_all(&docs_root).expect("create docs root");
 
         let project = fixture_project();

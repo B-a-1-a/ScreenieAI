@@ -114,16 +114,16 @@ export function InterviewPage() {
           ) : (
             project.interviewHistory.map((item, index) => (
               <article className={`chat-message ${item.role}`} key={`${item.timestamp ?? index}-${index}`}>
-                <header>{item.role === 'user' ? 'You' : 'IdeaForge'}</header>
+                <header>{item.role === 'user' ? 'You' : 'Screenie'}</header>
                 <p>{item.content}</p>
               </article>
             ))
           )}
           {isBusy && (
             <article className="chat-message model typing-indicator">
-              <header>IdeaForge</header>
+              <header>Screenie</header>
               <p>
-                IdeaForge is thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+                Screenie is thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
               </p>
             </article>
           )}

@@ -1,12 +1,12 @@
 [package]
-name = "ideaforge"
+name = "screenie"
 version = "0.1.0"
-description = "IdeaForge desktop planner"
-authors = ["IdeaForge"]
+description = "Screenie desktop planner"
+authors = ["Screenie"]
 edition = "2021"
 
 [lib]
-name = "ideaforge_lib"
+name = "screenie_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

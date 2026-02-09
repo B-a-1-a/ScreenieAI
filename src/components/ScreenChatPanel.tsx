@@ -44,15 +44,15 @@ export function ScreenChatPanel({
       <div className="chat-log" ref={chatLogRef}>
         {messages.map((message, index) => (
           <article className={`chat-message ${message.role}`} key={`${message.timestamp ?? index}-${index}`}>
-            <header>{message.role === 'user' ? 'You' : 'IdeaForge'}</header>
+            <header>{message.role === 'user' ? 'You' : 'Screenie'}</header>
             <p>{message.content}</p>
           </article>
         ))}
         {isBusy && (
           <article className="chat-message model typing-indicator">
-            <header>IdeaForge</header>
+            <header>Screenie</header>
             <p>
-              IdeaForge is thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+              Screenie is thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
             </p>
           </article>
         )}

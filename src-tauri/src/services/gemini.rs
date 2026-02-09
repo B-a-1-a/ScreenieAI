@@ -39,7 +39,7 @@ impl GeminiService {
             project_context, history_text
         );
 
-        let system_prompt = "You are IdeaForge's planning assistant.\nIf the project context describes interview mode, ask ONE focused clarifying question at a time. Provide 2-4 clickable options for the user to choose from. Always include an \"Other\" option. Set isComplete=true only when enough detail exists to generate a plan.\nIf the project context describes screen-chat mode, suggest precise UI updates and fill updatedDescription/regenerateWireframe/changesSummary (leave options null).\nRespond with strict JSON in this exact shape:\n{\"reply\":\"...\",\"isComplete\":false,\"options\":[\"Option A\",\"Option B\",\"Other\"],\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}";
+        let system_prompt = "You are Screenie's planning assistant.\nIf the project context describes interview mode, ask ONE focused clarifying question at a time. Provide 2-4 clickable options for the user to choose from. Always include an \"Other\" option. Set isComplete=true only when enough detail exists to generate a plan.\nIf the project context describes screen-chat mode, suggest precise UI updates and fill updatedDescription/regenerateWireframe/changesSummary (leave options null).\nRespond with strict JSON in this exact shape:\n{\"reply\":\"...\",\"isComplete\":false,\"options\":[\"Option A\",\"Option B\",\"Other\"],\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}";
 
         let response_text = self
             .generate_text_with_fallback(TEXT_MODELS, api_key, system_prompt, &prompt)
@@ -81,7 +81,7 @@ impl GeminiService {
             input.project_name, input.project_description, history_text
         );
 
-        let system_prompt = "You are IdeaForge's project architect. Respond with strict JSON only and no markdown fences. Shape:\n{\"appHighLevel\":\"# ...\",\"featureList\":\"# ...\",\"appFlow\":\"# ...\",\"suggestedStack\":\"# ...\",\"screens\":[{\"name\":\"...\",\"screenType\":\"visual\",\"description\":\"...\"}],\"cursorRules\":\"# ...\"}\nUse 4-8 screens and choose screenType as visual or info.";
+        let system_prompt = "You are Screenie's project architect. Respond with strict JSON only and no markdown fences. Shape:\n{\"appHighLevel\":\"# ...\",\"featureList\":\"# ...\",\"appFlow\":\"# ...\",\"suggestedStack\":\"# ...\",\"screens\":[{\"name\":\"...\",\"screenType\":\"visual\",\"description\":\"...\"}],\"cursorRules\":\"# ...\"}\nUse 4-8 screens and choose screenType as visual or info.";
 
         let response_text = self
             .generate_text_with_fallback(TEXT_MODELS, api_key, system_prompt, &prompt)

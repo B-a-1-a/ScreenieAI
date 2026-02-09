@@ -1,4 +1,4 @@
-# IdeaForge — Gemini Hackathon Build Plan (24 Hours)
+# Screenie — Gemini Hackathon Build Plan (24 Hours)
 
 ## App Concept
 
@@ -10,7 +10,7 @@ A Tauri desktop app for project planning. Users describe their app idea, an AI a
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│  IdeaForge                                        [Save] [Export ▼] │
+│  Screenie                                        [Save] [Export ▼] │
 ├──────────┬─────────────────────────────────────┬─────────────────────┤
 │ Screens  │          Whiteboard                 │ Info About This     │
 │          │                                     │ Screen              │
@@ -288,7 +288,7 @@ Keep the same whiteboard sketch style. Return the updated wireframe.`,
 ### Interview Agent (Phase 3)
 
 ```typescript
-export const INTERVIEW_PROMPT = `You are IdeaForge's project planning agent. The user just described their app idea at a high level. Your job is to:
+export const INTERVIEW_PROMPT = `You are Screenie's project planning agent. The user just described their app idea at a high level. Your job is to:
 
 1. Ask 3-5 focused clarifying questions to understand:
    - Target platform (mobile, web, desktop, cross-platform)
@@ -305,7 +305,7 @@ Be conversational, encouraging, and concise. Ask questions one at a time or in s
 ### Plan Generation Agent (Phase 4)
 
 ```typescript
-export const PLAN_GENERATION_PROMPT = `You are IdeaForge's project architect. Based on the user's app description and interview answers, generate a comprehensive development plan.
+export const PLAN_GENERATION_PROMPT = `You are Screenie's project architect. Based on the user's app description and interview answers, generate a comprehensive development plan.
 
 You MUST respond with a JSON object containing exactly these deliverables:
 
@@ -372,7 +372,7 @@ If the user is just asking questions (not requesting changes), respond conversat
 When the user saves or exports, write these files:
 
 ```
-~/Documents/IdeaForge/{ProjectName}/
+~/Documents/Screenie/{ProjectName}/
 ├── appflow.md                    # User journey and screen map
 ├── featurelist.md                # Prioritized feature list with checkboxes
 ├── apphighlevel.md               # Vision, users, value prop
@@ -386,8 +386,8 @@ When the user saves or exports, write these files:
 ├── .windsurfrules                # AI context for Windsurf
 ├── .clinerules                   # AI context for Cline
 ├── agents/
-│   └── ideaforge-context.md      # For .agents/ directory convention
-└── .ideaforge/
+│   └── screenie-context.md      # For .agents/ directory convention
+└── .screenie/
     ├── project.json              # Full project state (screens, descriptions, canvas)
     └── chat-history.json         # All conversation logs
 ```
@@ -467,12 +467,12 @@ fn load_project(path: String) -> Result<String, String> {
 fn list_projects() -> Result<Vec<String>, String> {
     let docs = dirs::document_dir()
         .ok_or("No documents dir")?;
-    let ideaforge_dir = docs.join("IdeaForge");
-    if !ideaforge_dir.exists() {
+    let screenie_dir = docs.join("Screenie");
+    if !screenie_dir.exists() {
         return Ok(vec![]);
     }
     let mut projects = vec![];
-    for entry in fs::read_dir(&ideaforge_dir).map_err(|e| e.to_string())? {
+    for entry in fs::read_dir(&screenie_dir).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
             projects.push(entry.file_name().to_string_lossy().to_string());
@@ -714,8 +714,8 @@ The tldraw whiteboard integration and filesystem export are bonus layers.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # 2. Create project
-npm create tauri-app@latest ideaforge -- --template react-ts
-cd ideaforge
+npm create tauri-app@latest screenie -- --template react-ts
+cd screenie
 
 # 3. Install frontend deps
 npm install tldraw zustand @google/genai

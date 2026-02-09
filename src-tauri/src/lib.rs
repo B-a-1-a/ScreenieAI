@@ -31,5 +31,5 @@ pub fn run() {
             detect_ides,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running IdeaForge");
+        .expect("error while running Screenie");
 }

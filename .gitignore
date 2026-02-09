@@ -62,7 +62,7 @@ coverage/
 # Note: Cargo.lock should be committed for applications (removed from gitignore)
 
 # Project-specific
-.ideaforge/
+.screenie/
 *.sqlite
 *.sqlite-journal
 

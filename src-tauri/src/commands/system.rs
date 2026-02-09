@@ -2,7 +2,7 @@ use std::{collections::HashSet, path::PathBuf, process::Command};
 
 use crate::{
     error::{AppError, AppResult},
-    services::paths::{ensure_within_root, idea_forge_root},
+    services::paths::{ensure_within_root, screenie_root},
 };
 
 fn allowed_ide_commands() -> HashSet<&'static str> {
@@ -19,7 +19,7 @@ pub fn open_in_ide(path: String, ide: String) -> AppResult<()> {
         )));
     }
 
-    let docs_root = idea_forge_root()?;
+    let docs_root = screenie_root()?;
     let requested_path = PathBuf::from(path);
     let safe_path = ensure_within_root(&docs_root, &requested_path)?;
 

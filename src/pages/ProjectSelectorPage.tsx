@@ -49,7 +49,7 @@ export function ProjectSelectorPage() {
   return (
     <main className="page page-selector">
       <header className="hero">
-        <h1>IdeaForge</h1>
+        <h1>Screenie</h1>
         <p>From rough idea to implementation blueprint with screen-level planning.</p>
       </header>
 
@@ -82,7 +82,7 @@ export function ProjectSelectorPage() {
 
             {hasApiKey ? (
               <div className="split">
-                <p className="muted">Gemini API key is saved in `~/.ideaforge/settings.json`.</p>
+                <p className="muted">Gemini API key is saved in `~/.screenie/settings.json`.</p>
                 <button disabled={isBusy} onClick={() => void clearApiKey()} type="button">
                   Clear Key
                 </button>
@@ -110,7 +110,7 @@ export function ProjectSelectorPage() {
         ) : null}
 
         {projects.length === 0 ? (
-          <p className="muted">No saved projects found in ~/Documents/IdeaForge.</p>
+          <p className="muted">No saved projects found in ~/Documents/Screenie.</p>
         ) : (
           <div className="project-list">
             {projects.map((project) => (

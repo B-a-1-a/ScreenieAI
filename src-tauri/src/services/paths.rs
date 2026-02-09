@@ -2,11 +2,11 @@ use std::path::{Component, Path, PathBuf};
 
 use crate::error::{AppError, AppResult};
 
-pub fn idea_forge_root() -> AppResult<PathBuf> {
+pub fn screenie_root() -> AppResult<PathBuf> {
     let docs = dirs::document_dir().ok_or_else(|| {
         AppError::Validation("Could not determine a Documents directory on this system".to_string())
     })?;
-    Ok(docs.join("IdeaForge"))
+    Ok(docs.join("Screenie"))
 }
 
 pub fn slugify(input: &str) -> String {
@@ -70,16 +70,16 @@ mod tests {
 
     #[test]
     fn ensure_within_root_rejects_escape() {
-        let root = PathBuf::from("/tmp/IdeaForge/root");
-        let escaped = PathBuf::from("/tmp/IdeaForge/root/../secrets");
+        let root = PathBuf::from("/tmp/Screenie/root");
+        let escaped = PathBuf::from("/tmp/Screenie/root/../secrets");
         let result = ensure_within_root(&root, &escaped);
         assert!(result.is_err());
     }
 
     #[test]
     fn ensure_within_root_accepts_valid_path() {
-        let root = PathBuf::from("/tmp/IdeaForge/root");
-        let valid = PathBuf::from("/tmp/IdeaForge/root/data/project.json");
+        let root = PathBuf::from("/tmp/Screenie/root");
+        let valid = PathBuf::from("/tmp/Screenie/root/data/project.json");
         let result = ensure_within_root(&root, &valid);
         assert!(result.is_ok());
     }

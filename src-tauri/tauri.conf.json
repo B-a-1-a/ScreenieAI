@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "IdeaForge",
+  "productName": "Screenie",
   "version": "0.1.0",
-  "identifier": "com.ideaforge.desktop",
+  "identifier": "com.screenie.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "IdeaForge",
+        "title": "Screenie",
         "width": 1600,
         "height": 980,
         "minWidth": 1100,

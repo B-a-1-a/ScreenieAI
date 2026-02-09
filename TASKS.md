@@ -1,4 +1,4 @@
-# IdeaForge - Development Tasks & Setup
+# Screenie - Development Tasks & Setup
 
 ## 🎯 Project Goal
 Build a desktop app (Tauri v2 + React) for turning app ideas into actionable plans through an interactive interview process.
@@ -99,7 +99,7 @@ ScreenieAI/
 
 ## 💡 Notes
 
-- **API Key:** Stored in `~/.ideaforge/settings.json` or loaded from `.env`
+- **API Key:** Stored in `~/.screenie/settings.json` or loaded from `.env`
 - **Interview Limit:** 3 rounds max (already implemented)
 - **Frontend Only Mode:** Use `npm run dev` for fast browser testing without Rust
 

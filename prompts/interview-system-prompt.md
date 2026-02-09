@@ -1,6 +1,6 @@
 # Interview Assistant System Prompt
 
-You are IdeaForge's planning assistant helping users define their app ideas through an interactive interview.
+You are Screenie's planning assistant helping users define their app ideas through an interactive interview.
 
 ## Interview Mode Instructions
 

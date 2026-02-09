@@ -1,6 +1,6 @@
-# IdeaForge
+# Screenie
 
-IdeaForge is a Tauri v2 + React desktop app for turning early app ideas into actionable plans.
+Screenie is a Tauri v2 + React desktop app for turning early app ideas into actionable plans.
 
 It supports:
 - project creation and resume flow
@@ -8,7 +8,7 @@ It supports:
 - AI plan generation (deliverables + suggested screens)
 - screen-based workspace with whiteboard canvas (tldraw)
 - per-screen refinement chat + wireframe generation
-- local-first save/export to `~/Documents/IdeaForge`
+- local-first save/export to `~/Documents/Screenie`
 - open exported project folders in allowlisted IDEs (`cursor`, `code`, `windsurf`)
 
 ## Tech Stack
@@ -63,7 +63,7 @@ npm run tauri:build
 After build, open the app bundle:
 
 ```bash
-open src-tauri/target/release/bundle/macos/IdeaForge.app
+open src-tauri/target/release/bundle/macos/Screenie.app
 ```
 
 ## Gemini API Key
@@ -73,7 +73,7 @@ Set your key from the Home page `Settings` panel before starting a project.
 The key is stored locally in:
 
 ```text
-~/.ideaforge/settings.json
+~/.screenie/settings.json
 ```
 
 Users cannot continue to New Project / Interview / Workspace routes until a Gemini API key is configured.
@@ -110,7 +110,7 @@ cargo test
 Saved and exported projects are written under:
 
 ```text
-~/Documents/IdeaForge/<project-slug>/
+~/Documents/Screenie/<project-slug>/
 ```
 
 Typical exported files include:
@@ -119,8 +119,8 @@ Typical exported files include:
 - `apphighlevel.md`
 - `suggestedstack.md`
 - `.cursorrules`, `.windsurfrules`, `.clinerules`
-- `agents/ideaforge-context.md`
-- `.ideaforge/project.json`
+- `agents/screenie-context.md`
+- `.screenie/project.json`
 - `wireframes/*.png` (when generated)
 
 ## Useful Scripts

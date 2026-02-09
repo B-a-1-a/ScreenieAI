@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::{AppError, AppResult};
 
-const SETTINGS_DIR_NAME: &str = ".ideaforge";
+const SETTINGS_DIR_NAME: &str = ".screenie";
 const SETTINGS_FILE_NAME: &str = "settings.json";
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
