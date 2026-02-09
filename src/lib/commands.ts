@@ -12,7 +12,22 @@ import type {
   ChatMessage,
 } from '../types/project'
 
+const TAURI_RUNTIME_ERROR =
+  'Tauri runtime is not available. Run the desktop app with `npm run tauri:dev` or use the bundled app.'
+
+function hasTauriRuntime(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  const maybeWindow = window as unknown as { __TAURI_INTERNALS__?: unknown }
+  return Boolean(maybeWindow.__TAURI_INTERNALS__)
+}
+
 async function tauriInvoke<T>(command: string, payload?: Record<string, unknown>): Promise<T> {
+  if (!hasTauriRuntime()) {
+    throw new Error(TAURI_RUNTIME_ERROR)
+  }
   return invoke<T>(command, payload)
 }
 

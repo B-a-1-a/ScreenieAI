@@ -55,7 +55,13 @@ function nowIso(): string {
 }
 
 function createId(prefix: string): string {
-  return `${prefix}-${crypto.randomUUID()}`
+  if (typeof globalThis.crypto !== 'undefined' && typeof globalThis.crypto.randomUUID === 'function') {
+    return `${prefix}-${globalThis.crypto.randomUUID()}`
+  }
+
+  const timestamp = Date.now().toString(36)
+  const randomPart = Math.random().toString(36).slice(2, 10)
+  return `${prefix}-${timestamp}-${randomPart}`
 }
 
 function defaultRegion(index: number): CanvasRegion {
@@ -111,6 +117,39 @@ function upsertScreen(project: ProjectState, updatedScreen: AppScreen): ProjectS
   }
 }
 
+function toErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error
+  }
+
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message
+    if (typeof message === 'string' && message.trim()) {
+      return message
+    }
+  }
+
+  try {
+    const serialized = JSON.stringify(error)
+    if (serialized && serialized !== '{}' && serialized !== 'null') {
+      return serialized
+    }
+  } catch (_ignored) {
+    // Ignore serialization failures and return fallback below.
+  }
+
+  return fallback
+}
+
+function isMissingApiKeyError(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return normalized.includes('gemini api key has not been set') || normalized.includes('gemini api key exists but is empty')
+}
+
 export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   projects: [],
   currentProject: null,
@@ -138,7 +177,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (error) {
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Failed to initialize app state',
+        error: toErrorMessage(error, 'Failed to initialize app state'),
       })
     }
   },
@@ -175,7 +214,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (error) {
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Failed to load project',
+        error: toErrorMessage(error, 'Failed to load project'),
       })
     }
   },
@@ -197,7 +236,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (error) {
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Failed to save project',
+        error: toErrorMessage(error, 'Failed to save project'),
       })
     }
   },
@@ -206,11 +245,18 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     set({ isBusy: true, error: null })
     try {
       await setGeminiApiKey(key)
+      const hasKey = await hasGeminiApiKey()
+      if (!hasKey) {
+        throw new Error('Gemini API key could not be verified after saving. Please save it again.')
+      }
+
       set({ hasApiKey: true, isBusy: false })
     } catch (error) {
+      const message = toErrorMessage(error, 'Failed to store API key')
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Failed to store API key',
+        hasApiKey: false,
+        error: message,
       })
     }
   },
@@ -223,7 +269,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (error) {
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Failed to clear API key',
+        error: toErrorMessage(error, 'Failed to clear API key'),
       })
     }
   },
@@ -276,9 +322,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         },
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Interview step failed')
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Interview step failed',
+        hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
+        error: message,
       })
     }
   },
@@ -324,9 +372,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         isBusy: false,
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Plan generation failed')
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Plan generation failed',
+        hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
+        error: message,
       })
     }
   },
@@ -474,9 +524,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         currentProject: upsertScreen(current, updatedScreen),
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Screen chat failed')
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Screen chat failed',
+        hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
+        error: message,
       })
     }
   },
@@ -526,9 +578,11 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         currentProject: upsertScreen(current, updated),
       })
     } catch (error) {
+      const message = toErrorMessage(error, 'Wireframe generation failed')
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Wireframe generation failed',
+        hasApiKey: isMissingApiKeyError(message) ? false : get().hasApiKey,
+        error: message,
       })
     }
   },
@@ -548,7 +602,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (error) {
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Project export failed',
+        error: toErrorMessage(error, 'Project export failed'),
       })
       return null
     }
@@ -573,7 +627,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
     } catch (error) {
       set({
         isBusy: false,
-        error: error instanceof Error ? error.message : 'Failed to open IDE',
+        error: toErrorMessage(error, 'Failed to open IDE'),
       })
     }
   },

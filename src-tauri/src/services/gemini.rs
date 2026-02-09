@@ -5,11 +5,14 @@ use serde_json::{json, Value};
 
 use crate::{
     error::{AppError, AppResult},
-    models::{ChatRole, ChatTurn, InterviewTurn, PlanInput, PlanOutput, WireframeEditInput, WireframeInput, WireframeOutput},
+    models::{
+        ChatRole, ChatTurn, InterviewTurn, PlanInput, PlanOutput, ScreenSeed, ScreenType,
+        WireframeEditInput, WireframeInput, WireframeOutput,
+    },
 };
 
-const TEXT_MODEL: &str = "gemini-2.5-flash";
-const IMAGE_MODEL: &str = "gemini-2.5-flash-image";
+const TEXT_MODELS: &[&str] = &["gemini-3-flash-preview", "gemini-2.5-flash"];
+const IMAGE_MODELS: &[&str] = &["gemini-3-pro-image-preview", "gemini-2.5-flash-image"];
 const MAX_RETRIES: usize = 3;
 
 pub struct GeminiService {
@@ -38,14 +41,23 @@ impl GeminiService {
 
         let system_prompt = "You are IdeaForge's planning assistant.\nIf the project context describes interview mode, ask practical clarifying questions and set isComplete=true only when enough detail exists to generate a plan.\nIf the project context describes screen-chat mode, suggest precise UI updates and fill updatedDescription/regenerateWireframe/changesSummary.\nRespond with strict JSON in this exact shape:\n{\"reply\":\"...\",\"isComplete\":false,\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}";
 
-        let mut turn: InterviewTurn = self
-            .generate_json(TEXT_MODEL, api_key, system_prompt, &prompt)
+        let response_text = self
+            .generate_text_with_fallback(TEXT_MODELS, api_key, system_prompt, &prompt)
             .await?;
 
+        let mut turn: InterviewTurn = match parse_model_json(&response_text) {
+            Ok(parsed) => parsed,
+            Err(_) => InterviewTurn {
+                reply: response_text.trim().to_string(),
+                is_complete: false,
+                updated_description: None,
+                regenerate_wireframe: None,
+                changes_summary: None,
+            },
+        };
+
         if turn.reply.trim().is_empty() {
-            return Err(AppError::Gemini(
-                "Interview response was empty after JSON parsing".to_string(),
-            ));
+            turn.reply = "Could you share a bit more detail so I can continue the interview?".to_string();
         }
 
         if let Some(updated) = &turn.updated_description {
@@ -70,11 +82,18 @@ impl GeminiService {
 
         let system_prompt = "You are IdeaForge's project architect. Respond with strict JSON only and no markdown fences. Shape:\n{\"appHighLevel\":\"# ...\",\"featureList\":\"# ...\",\"appFlow\":\"# ...\",\"suggestedStack\":\"# ...\",\"screens\":[{\"name\":\"...\",\"screenType\":\"visual\",\"description\":\"...\"}],\"cursorRules\":\"# ...\"}\nUse 4-8 screens and choose screenType as visual or info.";
 
-        let output: PlanOutput = self
-            .generate_json(TEXT_MODEL, api_key, system_prompt, &prompt)
+        let response_text = self
+            .generate_text_with_fallback(TEXT_MODELS, api_key, system_prompt, &prompt)
             .await?;
 
-        validate_plan_output(&output)?;
+        let parsed = parse_model_json::<PlanOutput>(&response_text).ok();
+        let mut output = parsed.unwrap_or_else(|| build_fallback_plan(input, &response_text));
+
+        if validate_plan_output(&output).is_err() {
+            output = build_fallback_plan(input, &response_text);
+            validate_plan_output(&output)?;
+        }
+
         Ok(output)
     }
 
@@ -88,7 +107,8 @@ impl GeminiService {
             input.app_context, input.screen_name, input.description
         );
 
-        self.generate_image(api_key, &prompt, None).await
+        self.generate_image_with_fallback(api_key, &prompt, None)
+            .await
     }
 
     pub async fn edit_wireframe(
@@ -101,28 +121,35 @@ impl GeminiService {
             input.screen_name, input.edit_instruction
         );
 
-        self.generate_image(api_key, &prompt, Some(input.existing_image_base64.clone()))
+        self.generate_image_with_fallback(api_key, &prompt, Some(&input.existing_image_base64))
             .await
     }
 
-    async fn generate_json<T: DeserializeOwned>(
+    async fn generate_text_with_fallback(
         &self,
-        model: &str,
+        models: &[&str],
         api_key: &str,
         system_prompt: &str,
         user_prompt: &str,
-    ) -> AppResult<T> {
-        let text = self
-            .generate_text(model, api_key, system_prompt, user_prompt)
-            .await?;
+    ) -> AppResult<String> {
+        let mut latest_model_error: Option<AppError> = None;
 
-        let json_payload = extract_json_payload(&text);
-        serde_json::from_str(&json_payload).map_err(|err| {
-            AppError::Gemini(format!(
-                "Model returned malformed JSON. error={}, payload={}",
-                err, json_payload
-            ))
-        })
+        for model in models {
+            match self
+                .generate_text(model, api_key, system_prompt, user_prompt)
+                .await
+            {
+                Ok(text) => return Ok(text),
+                Err(err) if should_try_next_model(&err) => {
+                    latest_model_error = Some(err);
+                }
+                Err(err) => return Err(err),
+            }
+        }
+
+        Err(latest_model_error.unwrap_or_else(|| {
+            AppError::Gemini("No configured Gemini text models were available".to_string())
+        }))
     }
 
     async fn generate_text(
@@ -149,49 +176,38 @@ impl GeminiService {
         extract_text_from_response(&response)
     }
 
-    async fn generate_image(
+    async fn generate_image_with_fallback(
         &self,
         api_key: &str,
         prompt: &str,
-        existing_image_base64: Option<String>,
+        existing_image_base64: Option<&str>,
     ) -> AppResult<WireframeOutput> {
-        let mut parts = vec![json!({ "text": prompt })];
+        let mut latest_model_error: Option<AppError> = None;
 
-        if let Some(image_data) = existing_image_base64 {
-            parts.insert(
-                0,
-                json!({
-                    "inlineData": {
-                        "mimeType": "image/png",
-                        "data": image_data
-                    }
-                }),
-            );
+        for model in IMAGE_MODELS {
+            let body = build_image_request_body(prompt, existing_image_base64);
+            let response = match self.post_with_retries(model, api_key, body).await {
+                Ok(value) => value,
+                Err(err) if should_try_next_model(&err) => {
+                    latest_model_error = Some(err);
+                    continue;
+                }
+                Err(err) => return Err(err),
+            };
+
+            let text = extract_text_from_response(&response).unwrap_or_default();
+            let (mime_type, image_base64) = extract_image_from_response(&response)?;
+
+            return Ok(WireframeOutput {
+                image_base64,
+                text,
+                mime_type,
+            });
         }
 
-        let body = json!({
-            "contents": [{
-                "role": "user",
-                "parts": parts
-            }],
-            "generationConfig": {
-                "temperature": 0.25,
-                "responseModalities": ["TEXT", "IMAGE"]
-            }
-        });
-
-        let response = self
-            .post_with_retries(IMAGE_MODEL, api_key, body)
-            .await?;
-
-        let text = extract_text_from_response(&response).unwrap_or_default();
-        let (mime_type, image_base64) = extract_image_from_response(&response)?;
-
-        Ok(WireframeOutput {
-            image_base64,
-            text,
-            mime_type,
-        })
+        Err(latest_model_error.unwrap_or_else(|| {
+            AppError::Gemini("No configured Gemini image models were available".to_string())
+        }))
     }
 
     async fn post_with_retries(&self, model: &str, api_key: &str, body: Value) -> AppResult<Value> {
@@ -238,6 +254,48 @@ impl GeminiService {
             AppError::Gemini("Gemini request failed without an explicit error".to_string())
         }))
     }
+}
+
+fn should_try_next_model(err: &AppError) -> bool {
+    let AppError::Gemini(message) = err else {
+        return false;
+    };
+
+    let lowercase = message.to_ascii_lowercase();
+    message.contains("HTTP 400")
+        || message.contains("HTTP 403")
+        || message.contains("HTTP 404")
+        || lowercase.contains("not found")
+        || lowercase.contains("is not supported")
+        || lowercase.contains("permission")
+        || lowercase.contains("access")
+}
+
+fn build_image_request_body(prompt: &str, existing_image_base64: Option<&str>) -> Value {
+    let mut parts = vec![json!({ "text": prompt })];
+
+    if let Some(image_data) = existing_image_base64 {
+        parts.insert(
+            0,
+            json!({
+                "inlineData": {
+                    "mimeType": "image/png",
+                    "data": image_data
+                }
+            }),
+        );
+    }
+
+    json!({
+        "contents": [{
+            "role": "user",
+            "parts": parts
+        }],
+        "generationConfig": {
+            "temperature": 0.25,
+            "responseModalities": ["TEXT", "IMAGE"]
+        }
+    })
 }
 
 fn format_history(history: &[ChatTurn]) -> String {
@@ -343,6 +401,63 @@ fn extract_json_payload(raw_text: &str) -> String {
     trimmed.to_string()
 }
 
+fn parse_model_json<T: DeserializeOwned>(raw_text: &str) -> AppResult<T> {
+    let json_payload = extract_json_payload(raw_text);
+    serde_json::from_str(&json_payload).map_err(|err| {
+        AppError::Gemini(format!(
+            "Model returned malformed JSON. error={}, payload={}",
+            err, json_payload
+        ))
+    })
+}
+
+fn build_fallback_plan(input: &PlanInput, raw_response: &str) -> PlanOutput {
+    let insight = raw_response
+        .lines()
+        .take(6)
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<&str>>()
+        .join(" ");
+
+    let insight_text = if insight.is_empty() {
+        "No additional model context was returned.".to_string()
+    } else {
+        insight
+    };
+
+    PlanOutput {
+        app_high_level: format!(
+            "# App Overview\n\n## Vision\n{}\n\n## Target Users\nDefine the primary persona based on interview answers.\n\n## Value Proposition\nShip an MVP that validates the core workflow quickly.\n\n## Notes from Model\n{}",
+            input.project_description, insight_text
+        ),
+        feature_list: "# Feature List\n\n## Core Features (MVP)\n- [ ] Project setup and onboarding\n- [ ] Primary task workflow\n- [ ] State persistence and settings\n\n## Phase 2 Features\n- [ ] Collaboration and sharing\n- [ ] Quality-of-life improvements\n\n## Nice-to-Haves\n- [ ] Automations and advanced analytics".to_string(),
+        app_flow: "# App Flow\n\n1. User opens app and sees onboarding or project selector.\n2. User creates/selects a project and configures the core workflow.\n3. User completes the primary task loop.\n4. User reviews progress and iterates.\n\n## Screen Map\n- Home: entry point and overview\n- Core Workflow: primary task interaction\n- Details: deep dive and editing\n- Settings: preferences and account controls".to_string(),
+        suggested_stack: "# Suggested Tech Stack\n\n## Frontend\n- React + TypeScript\n- State management tuned for predictable updates\n\n## Backend\n- Tauri Rust commands for secure local integrations\n\n## Data\n- Local-first JSON persistence under Documents\n\n## Rationale\nOptimized for desktop reliability, fast iteration, and low operational overhead.".to_string(),
+        screens: vec![
+            ScreenSeed {
+                name: "Home".to_string(),
+                screen_type: ScreenType::Visual,
+                description: "Landing screen showing key actions and current status.".to_string(),
+            },
+            ScreenSeed {
+                name: "Primary Flow".to_string(),
+                screen_type: ScreenType::Visual,
+                description: "Main interaction screen for the app's core value.".to_string(),
+            },
+            ScreenSeed {
+                name: "Specification Notes".to_string(),
+                screen_type: ScreenType::Info,
+                description: "Structured notes and implementation guidance.".to_string(),
+            },
+        ],
+        cursor_rules: format!(
+            "# Project Context\n\n## Project\n{}\n\n## Description\n{}\n\n## Working Rules\n- Prioritize MVP delivery\n- Keep data local-first\n- Maintain deterministic screen flows",
+            input.project_name, input.project_description
+        ),
+    }
+}
+
 fn validate_plan_output(output: &PlanOutput) -> AppResult<()> {
     if output.app_high_level.trim().is_empty()
         || output.feature_list.trim().is_empty()
@@ -421,5 +536,35 @@ mod tests {
         };
 
         assert!(validate_plan_output(&valid).is_ok());
+    }
+
+    #[test]
+    fn parse_model_json_rejects_non_json() {
+        let parsed = parse_model_json::<InterviewTurn>("plain text response");
+        assert!(parsed.is_err());
+    }
+
+    #[test]
+    fn fallback_plan_is_valid() {
+        let input = PlanInput {
+            project_name: "Demo".to_string(),
+            project_description: "A planning app".to_string(),
+            interview_history: vec![],
+        };
+
+        let fallback = build_fallback_plan(&input, "non-json model output");
+        assert!(validate_plan_output(&fallback).is_ok());
+    }
+
+    #[test]
+    fn should_try_next_model_for_access_errors() {
+        let err = AppError::Gemini("Gemini HTTP 404 Not Found".to_string());
+        assert!(should_try_next_model(&err));
+    }
+
+    #[test]
+    fn should_not_try_next_model_for_network_errors() {
+        let err = AppError::Validation("local validation failure".to_string());
+        assert!(!should_try_next_model(&err));
     }
 }
