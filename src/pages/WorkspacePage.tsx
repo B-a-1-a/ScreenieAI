@@ -1,0 +1,110 @@
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { InfoPanel } from '../components/InfoPanel'
+import { ScreenChatPanel } from '../components/ScreenChatPanel'
+import { ScreensSidebar } from '../components/ScreensSidebar'
+import { WhiteboardCanvas } from '../components/WhiteboardCanvas'
+import { useProjectStore } from '../store/projectStore'
+
+export function WorkspacePage() {
+  const navigate = useNavigate()
+
+  const project = useProjectStore((state) => state.currentProject)
+  const selectedScreenId = useProjectStore((state) => state.selectedScreenId)
+  const isBusy = useProjectStore((state) => state.isBusy)
+  const error = useProjectStore((state) => state.error)
+  const availableIdes = useProjectStore((state) => state.availableIdes)
+
+  const selectScreen = useProjectStore((state) => state.selectScreen)
+  const addScreen = useProjectStore((state) => state.addScreen)
+  const updateScreen = useProjectStore((state) => state.updateScreen)
+  const submitScreenMessage = useProjectStore((state) => state.submitScreenMessage)
+  const regenerateWireframeForSelected = useProjectStore(
+    (state) => state.regenerateWireframeForSelected,
+  )
+  const saveCurrentProject = useProjectStore((state) => state.saveCurrentProject)
+  const exportCurrentProject = useProjectStore((state) => state.exportCurrentProject)
+  const openCurrentProjectInIde = useProjectStore((state) => state.openCurrentProjectInIde)
+
+  useEffect(() => {
+    if (!project) {
+      navigate('/')
+    }
+  }, [navigate, project])
+
+  if (!project) {
+    return <main className="page">Loading workspace...</main>
+  }
+
+  const selectedScreen = project.screens.find((screen) => screen.id === selectedScreenId) ?? null
+
+  async function handleExport(): Promise<void> {
+    await exportCurrentProject()
+  }
+
+  return (
+    <main className="workspace-root">
+      <header className="workspace-header">
+        <div>
+          <h1>{project.name}</h1>
+          <p className="muted">{project.description}</p>
+        </div>
+        <div className="workspace-actions">
+          <button disabled={isBusy} type="button" onClick={() => void saveCurrentProject()}>
+            Save
+          </button>
+          <button disabled={isBusy} type="button" onClick={() => void handleExport()}>
+            Export
+          </button>
+          {availableIdes.map((ide) => (
+            <button
+              key={ide}
+              disabled={isBusy}
+              onClick={() => void openCurrentProjectInIde(ide as 'cursor' | 'code' | 'windsurf')}
+              type="button"
+            >
+              Open in {ide}
+            </button>
+          ))}
+          <button type="button" onClick={() => navigate('/')}>
+            Projects
+          </button>
+        </div>
+      </header>
+
+      <section className="workspace-grid">
+        <ScreensSidebar
+          screens={project.screens}
+          selectedScreenId={selectedScreenId}
+          onSelectScreen={selectScreen}
+          onAddVisual={() => addScreen(`Screen ${project.screens.length + 1}`, 'visual')}
+          onAddInfo={() => addScreen(`Doc ${project.screens.length + 1}`, 'info')}
+        />
+
+        <WhiteboardCanvas
+          projectId={project.id}
+          screens={project.screens}
+          selectedScreenId={selectedScreenId}
+        />
+
+        <section className="workspace-right">
+          <InfoPanel
+            screen={selectedScreen}
+            deliverables={project.deliverables}
+            onUpdateScreen={updateScreen}
+          />
+          <ScreenChatPanel
+            messages={selectedScreen?.chatHistory ?? []}
+            isBusy={isBusy}
+            onSend={submitScreenMessage}
+            onRegenerateWireframe={regenerateWireframeForSelected}
+          />
+        </section>
+      </section>
+
+      <footer className="workspace-footer">
+        <p className="error-text">{error}</p>
+      </footer>
+    </main>
+  )
+}

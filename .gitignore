@@ -11,6 +11,7 @@ dist/
 dist-ssr/
 build/
 out/
+.vite/
 
 # Tauri build artifacts
 src-tauri/target/
