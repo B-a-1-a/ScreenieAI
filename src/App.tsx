@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { InterviewPage } from './pages/InterviewPage'
 import { NewProjectPage } from './pages/NewProjectPage'
 import { ProjectSelectorPage } from './pages/ProjectSelectorPage'
@@ -7,6 +8,9 @@ import { WorkspacePage } from './pages/WorkspacePage'
 import { useProjectStore } from './store/projectStore'
 
 function AppRoutes() {
+  const navigate = useNavigate()
+  useKeyboardShortcuts(navigate)
+
   return (
     <Routes>
       <Route path="/" element={<ProjectSelectorPage />} />

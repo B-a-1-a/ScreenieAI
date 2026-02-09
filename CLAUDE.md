@@ -20,3 +20,7 @@ Use the Conventional Commits standard:
 - **subject**: imperative, lowercase, no period, max 50 chars
 - **body**: wrap at 72 chars, explain *what* and *why* (not *how*)
 - **footer**: `Co-Authored-By`, breaking changes, issue refs
+
+## Git Identity
+
+All commits MUST set BOTH the **author** (`GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL`) AND the **committer** (`GIT_COMMITTER_NAME`/`GIT_COMMITTER_EMAIL`) to `Abhinav Nandwani <nandwani2@wisc.edu>`. Never rely on the system default.

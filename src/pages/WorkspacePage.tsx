@@ -22,6 +22,7 @@ export function WorkspacePage() {
   const availableIdes = useProjectStore((state) => state.availableIdes)
 
   const selectScreen = useProjectStore((state) => state.selectScreen)
+  const removeScreen = useProjectStore((state) => state.removeScreen)
   const addScreen = useProjectStore((state) => state.addScreen)
   const updateScreen = useProjectStore((state) => state.updateScreen)
   const submitScreenMessage = useProjectStore((state) => state.submitScreenMessage)
@@ -94,6 +95,7 @@ export function WorkspacePage() {
           selectedScreenId={selectedScreenId}
           onSelectScreen={selectScreen}
           onRenameScreen={(screenId, newName) => updateScreen(screenId, { name: newName })}
+          onRemoveScreen={removeScreen}
           onAddVisual={() => addScreen(`Screen ${project.screens.length + 1}`, 'visual')}
           onAddInfo={() => addScreen(`Doc ${project.screens.length + 1}`, 'info')}
         />

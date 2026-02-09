@@ -6,6 +6,7 @@ interface ScreensSidebarProps {
   selectedScreenId: string | null
   onSelectScreen: (screenId: string) => void
   onRenameScreen: (screenId: string, newName: string) => void
+  onRemoveScreen: (screenId: string) => void
   onAddVisual: () => void
   onAddInfo: () => void
 }
@@ -15,6 +16,7 @@ export function ScreensSidebar({
   selectedScreenId,
   onSelectScreen,
   onRenameScreen,
+  onRemoveScreen,
   onAddVisual,
   onAddInfo,
 }: ScreensSidebarProps) {
@@ -72,6 +74,29 @@ export function ScreensSidebar({
               <span className="screen-name">{screen.name}</span>
             )}
             <span className="screen-kind">{screen.screenType}</span>
+            <span
+              role="button"
+              tabIndex={0}
+              className="screen-delete-btn"
+              title="Delete screen"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (window.confirm(`Delete "${screen.name}"?`)) {
+                  onRemoveScreen(screen.id)
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation()
+                  if (window.confirm(`Delete "${screen.name}"?`)) {
+                    onRemoveScreen(screen.id)
+                  }
+                }
+              }}
+              onDoubleClick={(e) => e.stopPropagation()}
+            >
+              &times;
+            </span>
           </button>
         ))}
       </div>

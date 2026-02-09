@@ -1,4 +1,5 @@
 import type { AppScreen, Deliverables, ScreenType } from '../types/project'
+import { MarkdownView } from './MarkdownView'
 
 interface InfoPanelProps {
   screen: AppScreen | null
@@ -77,7 +78,7 @@ export function InfoPanel({ screen, deliverables, onUpdateScreen }: InfoPanelPro
 
       <div className="deliverable-preview">
         <h4>Plan Snapshot</h4>
-        <p>{deliverableSummary(deliverables)}</p>
+        <MarkdownView content={deliverableSummary(deliverables)} />
       </div>
     </section>
   )

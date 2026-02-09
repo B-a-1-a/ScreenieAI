@@ -32,14 +32,13 @@ impl GeminiService {
         api_key: &str,
         project_context: &str,
         history: &[ChatTurn],
+        system_prompt: &str,
     ) -> AppResult<InterviewTurn> {
         let history_text = format_history(history);
         let prompt = format!(
             "Project context:\n{}\n\nConversation so far:\n{}\n\nReturn one JSON object only.",
             project_context, history_text
         );
-
-        let system_prompt = "You are IdeaForge's planning assistant.\nIf the project context describes interview mode, ask ONE focused clarifying question at a time. Provide 2-4 clickable options for the user to choose from. Always include an \"Other\" option. Set isComplete=true only when enough detail exists to generate a plan.\nIf the project context describes screen-chat mode, suggest precise UI updates and fill updatedDescription/regenerateWireframe/changesSummary (leave options null).\nRespond with strict JSON in this exact shape:\n{\"reply\":\"...\",\"isComplete\":false,\"options\":[\"Option A\",\"Option B\",\"Other\"],\"updatedDescription\":null,\"regenerateWireframe\":null,\"changesSummary\":null}";
 
         let response_text = self
             .generate_text_with_fallback(TEXT_MODELS, api_key, system_prompt, &prompt)
@@ -501,6 +500,8 @@ mod tests {
     use super::*;
     use crate::models::{ScreenSeed, ScreenType};
 
+    const INTERVIEW_PROMPT: &str = include_str!("../../../prompts/interview-system-prompt.md");
+
     #[test]
     fn json_payload_extracts_fenced_block() {
         let payload = extract_json_payload("```json\n{\"a\":1}\n```");
@@ -603,5 +604,22 @@ mod tests {
         let turn: InterviewTurn = parse_model_json(raw).unwrap();
         assert_eq!(turn.reply, "Pick one");
         assert_eq!(turn.options.unwrap().len(), 2);
+    }
+
+    #[test]
+    fn interview_prompt_is_non_empty_and_contains_expected_keywords() {
+        assert!(
+            !INTERVIEW_PROMPT.is_empty(),
+            "INTERVIEW_PROMPT must not be empty"
+        );
+        let lower = INTERVIEW_PROMPT.to_lowercase();
+        assert!(
+            lower.contains("interview"),
+            "INTERVIEW_PROMPT should contain the word 'interview'"
+        );
+        assert!(
+            lower.contains("json"),
+            "INTERVIEW_PROMPT should contain the word 'JSON'"
+        );
     }
 }

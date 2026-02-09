@@ -74,6 +74,83 @@ describe('projectStore basic actions', () => {
   })
 })
 
+describe('projectStore removeScreen', () => {
+  beforeEach(() => {
+    resetStore()
+  })
+
+  it('removes a screen and reduces the screen count', () => {
+    useProjectStore.getState().createProjectDraft('Demo', 'desc')
+    useProjectStore.getState().addScreen('Screen A', 'visual')
+    useProjectStore.getState().addScreen('Screen B', 'info')
+    useProjectStore.getState().addScreen('Screen C', 'visual')
+
+    const screens = useProjectStore.getState().currentProject!.screens
+    expect(screens).toHaveLength(3)
+
+    const screenBId = screens[1]!.id
+    useProjectStore.getState().removeScreen(screenBId)
+
+    const after = useProjectStore.getState().currentProject!.screens
+    expect(after).toHaveLength(2)
+    expect(after.find((s) => s.id === screenBId)).toBeUndefined()
+  })
+
+  it('updates selectedScreenId when the selected screen is removed', () => {
+    useProjectStore.getState().createProjectDraft('Demo', 'desc')
+    useProjectStore.getState().addScreen('Screen A', 'visual')
+    useProjectStore.getState().addScreen('Screen B', 'info')
+
+    const screens = useProjectStore.getState().currentProject!.screens
+    const screenAId = screens[0]!.id
+    const screenBId = screens[1]!.id
+
+    // addScreen auto-selects the last added screen
+    expect(useProjectStore.getState().selectedScreenId).toBe(screenBId)
+
+    // Remove the currently selected screen (Screen B)
+    useProjectStore.getState().removeScreen(screenBId)
+
+    const state = useProjectStore.getState()
+    expect(state.currentProject!.screens).toHaveLength(1)
+    // Should fall back to the first remaining screen
+    expect(state.selectedScreenId).toBe(screenAId)
+  })
+
+  it('sets selectedScreenId to null when the last screen is removed', () => {
+    useProjectStore.getState().createProjectDraft('Demo', 'desc')
+    useProjectStore.getState().addScreen('Only Screen', 'visual')
+
+    const screenId = useProjectStore.getState().currentProject!.screens[0]!.id
+    useProjectStore.getState().removeScreen(screenId)
+
+    const state = useProjectStore.getState()
+    expect(state.currentProject!.screens).toHaveLength(0)
+    expect(state.selectedScreenId).toBeNull()
+  })
+
+  it('preserves selectedScreenId when a non-selected screen is removed', () => {
+    useProjectStore.getState().createProjectDraft('Demo', 'desc')
+    useProjectStore.getState().addScreen('Screen A', 'visual')
+    useProjectStore.getState().addScreen('Screen B', 'info')
+
+    const screens = useProjectStore.getState().currentProject!.screens
+    const screenAId = screens[0]!.id
+    const screenBId = screens[1]!.id
+
+    // Select Screen B (already selected since it was added last)
+    expect(useProjectStore.getState().selectedScreenId).toBe(screenBId)
+
+    // Remove Screen A (not the selected one)
+    useProjectStore.getState().removeScreen(screenAId)
+
+    const state = useProjectStore.getState()
+    expect(state.currentProject!.screens).toHaveLength(1)
+    // Selected screen should remain Screen B
+    expect(state.selectedScreenId).toBe(screenBId)
+  })
+})
+
 describe('projectStore interview options', () => {
   beforeEach(() => {
     resetStore()

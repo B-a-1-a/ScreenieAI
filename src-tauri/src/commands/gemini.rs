@@ -7,6 +7,8 @@ use crate::{
     services::{gemini::GeminiService, key_store},
 };
 
+const INTERVIEW_PROMPT: &str = include_str!("../../../prompts/interview-system-prompt.md");
+
 #[tauri::command]
 pub fn set_gemini_api_key(key: String) -> AppResult<()> {
     key_store::set_gemini_api_key(&key)
@@ -30,7 +32,7 @@ pub async fn run_interview_turn(
     let api_key = key_store::read_gemini_api_key()?;
     let gemini = GeminiService::new()?;
     gemini
-        .run_interview_turn(&api_key, &project_context, &history)
+        .run_interview_turn(&api_key, &project_context, &history, INTERVIEW_PROMPT)
         .await
 }
 

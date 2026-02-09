@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Deliverables, AppScreen } from '../types/project'
+import { MarkdownView } from './MarkdownView'
 
 interface PlanPreviewPanelProps {
   deliverables: Deliverables
@@ -41,7 +42,7 @@ function CollapsibleSection({
       >
         <div className="plan-preview-section-inner">
           {content ? (
-            <p className="plan-preview-content">{content}</p>
+            <MarkdownView content={content} />
           ) : (
             <p className="plan-preview-pending">Pending...</p>
           )}

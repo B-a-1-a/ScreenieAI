@@ -396,6 +396,36 @@ textarea {
   display: grid;
   gap: 0.1rem;
   background: var(--surface-alt);
+  position: relative;
+}
+
+.screen-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  line-height: 1;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.screen-delete-btn:hover {
+  background: var(--danger);
+  color: #ffffff;
+  border-color: var(--danger);
+}
+
+.screen-item:hover .screen-delete-btn {
+  display: flex;
 }
 
 .screen-item.active {
@@ -852,4 +882,103 @@ textarea {
   background: linear-gradient(135deg, #edf4ff 0%, #e0efff 100%);
   color: #2563eb;
   border: 1px solid #c0d8f5;
+}
+
+/* ── Markdown View ──────────────────────────────────── */
+
+.markdown-view {
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--ink);
+  word-wrap: break-word;
+}
+
+.markdown-view h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0.6rem 0 0.35rem;
+  line-height: 1.3;
+}
+
+.markdown-view h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.5rem 0 0.3rem;
+  line-height: 1.35;
+}
+
+.markdown-view h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0.4rem 0 0.25rem;
+  line-height: 1.4;
+}
+
+.markdown-view h1:first-child,
+.markdown-view h2:first-child,
+.markdown-view h3:first-child {
+  margin-top: 0;
+}
+
+.markdown-view p {
+  margin: 0.3rem 0;
+}
+
+.markdown-view ul {
+  margin: 0.3rem 0;
+  padding-left: 1.4rem;
+  list-style: disc;
+}
+
+.markdown-view ul li {
+  margin: 0.15rem 0;
+  line-height: 1.55;
+}
+
+.markdown-view ul li.checkbox {
+  list-style: none;
+  margin-left: -1.4rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.markdown-view ul li.checkbox input[type='checkbox'] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--brand);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.markdown-view code {
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', monospace;
+  font-size: 0.82em;
+  background: #f0f3f8;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+
+.markdown-view pre {
+  margin: 0.4rem 0;
+  padding: 0.75rem 1rem;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.markdown-view pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.markdown-view strong {
+  font-weight: 600;
 }

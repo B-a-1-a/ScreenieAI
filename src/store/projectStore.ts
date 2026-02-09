@@ -44,6 +44,7 @@ interface ProjectStoreState {
   submitInterviewMessage: (content: string) => Promise<void>
   generatePlanFromInterview: () => Promise<void>
   selectScreen: (screenId: string) => void
+  removeScreen: (screenId: string) => void
   addScreen: (name: string, screenType: ScreenType) => void
   updateScreen: (screenId: string, patch: Partial<AppScreen>) => void
   submitScreenMessage: (content: string) => Promise<void>
@@ -401,6 +402,29 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
   },
 
   selectScreen: (screenId) => set({ selectedScreenId: screenId }),
+
+  removeScreen: (screenId) => {
+    const project = get().currentProject
+    if (!project) {
+      return
+    }
+
+    const remainingScreens = project.screens.filter((screen) => screen.id !== screenId)
+
+    const nextSelectedId =
+      get().selectedScreenId === screenId
+        ? remainingScreens[0]?.id ?? null
+        : get().selectedScreenId
+
+    set({
+      currentProject: {
+        ...project,
+        updatedAt: nowIso(),
+        screens: remainingScreens,
+      },
+      selectedScreenId: nextSelectedId,
+    })
+  },
 
   addScreen: (name, screenType) => {
     const project = get().currentProject
