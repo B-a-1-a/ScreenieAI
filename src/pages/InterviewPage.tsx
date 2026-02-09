@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjectStore } from '../store/projectStore'
+import { PlanPreviewPanel } from '../components/PlanPreviewPanel'
 
 export function InterviewPage() {
   const navigate = useNavigate()
@@ -17,6 +18,7 @@ export function InterviewPage() {
 
   const [message, setMessage] = useState('')
   const [showOtherInput, setShowOtherInput] = useState(false)
+  const chatLogRef = useRef<HTMLDivElement>(null)
 
   const roundCount = getInterviewRoundCount()
   const limitReached = isInterviewLimitReached()
@@ -33,6 +35,12 @@ export function InterviewPage() {
       navigate('/')
     }
   }, [hasApiKey, navigate])
+
+  useEffect(() => {
+    if (chatLogRef.current) {
+      chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight
+    }
+  }, [project?.interviewHistory, isBusy])
 
   if (!project || !hasApiKey) {
     return <main className="page">Loading project...</main>
@@ -66,8 +74,11 @@ export function InterviewPage() {
     }
   }
 
+  const deliverables = project.deliverables
+  const screens = project.screens
+
   return (
-    <main className="page page-interview">
+    <main className="page page-interview interview-split">
       <section className="panel interview-panel">
         <div className="panel-header">
           <div>
@@ -84,7 +95,7 @@ export function InterviewPage() {
           </button>
         </div>
 
-        <div className="chat-log interview-log">
+        <div className="chat-log interview-log" ref={chatLogRef}>
           {project.interviewHistory.length === 0 ? (
             <div style={{
               textAlign: 'center',
@@ -94,7 +105,7 @@ export function InterviewPage() {
               lineHeight: '1.6'
             }}>
               <p style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
-                💬 Start the conversation
+                Start the conversation
               </p>
               <p>
                 Describe your target users, platform, and core value proposition.
@@ -107,6 +118,14 @@ export function InterviewPage() {
                 <p>{item.content}</p>
               </article>
             ))
+          )}
+          {isBusy && (
+            <article className="chat-message model typing-indicator">
+              <header>IdeaForge</header>
+              <p>
+                IdeaForge is thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+              </p>
+            </article>
           )}
         </div>
 
@@ -187,6 +206,8 @@ export function InterviewPage() {
           </button>
         </div>
       </section>
+
+      <PlanPreviewPanel deliverables={deliverables} screens={screens} />
     </main>
   )
 }

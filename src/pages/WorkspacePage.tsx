@@ -1,13 +1,18 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ExportDialog } from '../components/ExportDialog'
 import { InfoPanel } from '../components/InfoPanel'
 import { ScreenChatPanel } from '../components/ScreenChatPanel'
 import { ScreensSidebar } from '../components/ScreensSidebar'
 import { WhiteboardCanvas } from '../components/WhiteboardCanvas'
 import { useProjectStore } from '../store/projectStore'
+import type { ExportResult } from '../types/project'
 
 export function WorkspacePage() {
   const navigate = useNavigate()
+
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null)
+  const [showExportDialog, setShowExportDialog] = useState(false)
 
   const project = useProjectStore((state) => state.currentProject)
   const hasApiKey = useProjectStore((state) => state.hasApiKey)
@@ -46,7 +51,11 @@ export function WorkspacePage() {
   const selectedScreen = project.screens.find((screen) => screen.id === selectedScreenId) ?? null
 
   async function handleExport(): Promise<void> {
-    await exportCurrentProject()
+    const result = await exportCurrentProject()
+    if (result) {
+      setExportResult(result)
+      setShowExportDialog(true)
+    }
   }
 
   return (
@@ -84,6 +93,7 @@ export function WorkspacePage() {
           screens={project.screens}
           selectedScreenId={selectedScreenId}
           onSelectScreen={selectScreen}
+          onRenameScreen={(screenId, newName) => updateScreen(screenId, { name: newName })}
           onAddVisual={() => addScreen(`Screen ${project.screens.length + 1}`, 'visual')}
           onAddInfo={() => addScreen(`Doc ${project.screens.length + 1}`, 'info')}
         />
@@ -112,6 +122,15 @@ export function WorkspacePage() {
       <footer className="workspace-footer">
         <p className="error-text">{error}</p>
       </footer>
+
+      <ExportDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        exportResult={exportResult}
+        availableIdes={availableIdes}
+        onOpenInIde={(ide) => void openCurrentProjectInIde(ide as 'cursor' | 'code' | 'windsurf')}
+        isBusy={isBusy}
+      />
     </main>
   )
 }

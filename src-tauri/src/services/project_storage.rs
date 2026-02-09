@@ -251,6 +251,22 @@ pub fn list_saved_projects() -> AppResult<Vec<ProjectSummary>> {
     list_saved_projects_in_root(&docs_root)
 }
 
+pub fn delete_project(path: &str) -> AppResult<()> {
+    let docs_root = idea_forge_root()?;
+    let project_path = PathBuf::from(path);
+    let safe_path = ensure_within_root(&docs_root, &project_path)?;
+
+    if !safe_path.exists() {
+        return Err(AppError::Validation(format!(
+            "Project directory does not exist: {}",
+            safe_path.display()
+        )));
+    }
+
+    fs::remove_dir_all(&safe_path)?;
+    Ok(())
+}
+
 pub fn export_project_artifacts(project: &ProjectState) -> AppResult<ExportResult> {
     let docs_root = idea_forge_root()?;
     export_project_artifacts_in_root(&docs_root, project)

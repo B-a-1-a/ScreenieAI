@@ -86,6 +86,10 @@ export async function openInIde(path: string, ide: 'cursor' | 'code' | 'windsurf
   await tauriInvoke('open_in_ide', { path, ide })
 }
 
+export async function deleteProject(path: string): Promise<void> {
+  await tauriInvoke('delete_project', { path })
+}
+
 export async function detectIdes(): Promise<string[]> {
   return tauriInvoke<string[]>('detect_ides')
 }

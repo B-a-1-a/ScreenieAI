@@ -7,6 +7,7 @@ export function ProjectSelectorPage() {
   const projects = useProjectStore((state) => state.projects)
   const hasApiKey = useProjectStore((state) => state.hasApiKey)
   const loadProjectFromPath = useProjectStore((state) => state.loadProjectFromPath)
+  const deleteProjectByPath = useProjectStore((state) => state.deleteProjectByPath)
   const setApiKey = useProjectStore((state) => state.setApiKey)
   const clearApiKey = useProjectStore((state) => state.clearApiKey)
   const isBusy = useProjectStore((state) => state.isBusy)
@@ -35,6 +36,14 @@ export function ProjectSelectorPage() {
       setApiKeyDraft('')
       setSettingsOpen(false)
     }
+  }
+
+  async function handleDelete(path: string, name: string): Promise<void> {
+    const confirmed = window.confirm(`Delete project "${name}"? This cannot be undone.`)
+    if (!confirmed) {
+      return
+    }
+    await deleteProjectByPath(path)
   }
 
   return (
@@ -110,13 +119,26 @@ export function ProjectSelectorPage() {
                   <h3>{project.name}</h3>
                   <p className="muted">Updated {new Date(project.updatedAt).toLocaleString()}</p>
                 </div>
-                <button
-                  disabled={!hasApiKey || isBusy}
-                  type="button"
-                  onClick={() => void openProject(project.path)}
-                >
-                  Open
-                </button>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <button
+                    disabled={!hasApiKey || isBusy}
+                    type="button"
+                    onClick={() => void openProject(project.path)}
+                  >
+                    Open
+                  </button>
+                  <button
+                    disabled={isBusy}
+                    type="button"
+                    style={{
+                      color: 'var(--danger)',
+                      borderColor: 'var(--danger)',
+                    }}
+                    onClick={() => void handleDelete(project.path, project.name)}
+                  >
+                    Delete
+                  </button>
+                </div>
               </article>
             ))}
           </div>

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react'
+import { FormEvent, useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '../types/project'
 
 interface ScreenChatPanelProps {
@@ -15,6 +15,13 @@ export function ScreenChatPanel({
   onRegenerateWireframe,
 }: ScreenChatPanelProps) {
   const [draft, setDraft] = useState('')
+  const chatLogRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (chatLogRef.current) {
+      chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight
+    }
+  }, [messages, isBusy])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault()
@@ -34,13 +41,21 @@ export function ScreenChatPanel({
           Regenerate Wireframe
         </button>
       </div>
-      <div className="chat-log">
+      <div className="chat-log" ref={chatLogRef}>
         {messages.map((message, index) => (
           <article className={`chat-message ${message.role}`} key={`${message.timestamp ?? index}-${index}`}>
             <header>{message.role === 'user' ? 'You' : 'IdeaForge'}</header>
             <p>{message.content}</p>
           </article>
         ))}
+        {isBusy && (
+          <article className="chat-message model typing-indicator">
+            <header>IdeaForge</header>
+            <p>
+              IdeaForge is thinking<span className="loading-dots"><span>.</span><span>.</span><span>.</span></span>
+            </p>
+          </article>
+        )}
       </div>
       <form className="chat-input" onSubmit={handleSubmit}>
         <input

@@ -21,6 +21,11 @@ pub fn list_projects() -> AppResult<Vec<ProjectSummary>> {
 }
 
 #[tauri::command]
+pub fn delete_project(path: String) -> AppResult<()> {
+    project_storage::delete_project(&path)
+}
+
+#[tauri::command]
 pub fn export_project(input: ExportInput) -> AppResult<ExportResult> {
     project_storage::export_project_artifacts(&input.project)
 }

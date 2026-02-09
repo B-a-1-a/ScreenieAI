@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import {
   clearGeminiApiKey,
+  deleteProject,
   detectIdes,
   editWireframe,
   exportProject,
@@ -48,6 +49,7 @@ interface ProjectStoreState {
   submitScreenMessage: (content: string) => Promise<void>
   regenerateWireframeForSelected: () => Promise<void>
   exportCurrentProject: () => Promise<ExportResult | null>
+  deleteProjectByPath: (path: string) => Promise<void>
   openCurrentProjectInIde: (ide: 'cursor' | 'code' | 'windsurf') => Promise<void>
   getInterviewRoundCount: () => number
   isInterviewLimitReached: () => boolean
@@ -622,6 +624,23 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => ({
         error: toErrorMessage(error, 'Project export failed'),
       })
       return null
+    }
+  },
+
+  deleteProjectByPath: async (path) => {
+    set({ isBusy: true, error: null })
+    try {
+      await deleteProject(path)
+      const projectList = await listProjects()
+      set({
+        projects: projectList,
+        isBusy: false,
+      })
+    } catch (error) {
+      set({
+        isBusy: false,
+        error: toErrorMessage(error, 'Failed to delete project'),
+      })
     }
   },
 
